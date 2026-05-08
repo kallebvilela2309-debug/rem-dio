@@ -2,19 +2,23 @@
 <html>
 <head><title>Teste IA</title></head>
 <body>
-<input id="p" placeholder="Pergunta"><button onclick="testar()">Perguntar</button>
+<input id="p" placeholder="Pergunta" value="Quem é você?"><button onclick="testar()">Perguntar</button>
 <div id="r"></div>
 <script>
-const API_KEY = "AIzaSyBIKuwLWNPmdAqeMkaCrGf2FMzdVVnEWX0"; // substitua pela válida
+const API_KEY = "AIzaSyBIKuwLWNPmdAqeMkaCrGf2FMzdVVnEWX0";
 async function testar() {
   const pergunta = document.getElementById("p").value;
-  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`, {
-    method: "POST",
-    headers: {"Content-Type":"application/json"},
-    body: JSON.stringify({contents:[{parts:[{text:pergunta}]}]})
-  });
-  const data = await res.json();
-  document.getElementById("r").innerText = JSON.stringify(data);
+  const respostaDiv = document.getElementById("r");
+  respostaDiv.innerText = "Consultando...";
+  try {
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${API_KEY}`, {
+      method: "POST",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({contents:[{parts:[{text:pergunta}]}]})
+    });
+    const data = await res.json();
+    respostaDiv.innerText = JSON.stringify(data, null, 2);
+  } catch(e) { respostaDiv.innerText = "Erro: " + e.message; }
 }
 </script>
 </body>
