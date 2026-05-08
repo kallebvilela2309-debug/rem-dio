@@ -3,543 +3,762 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>Dose Inteligente - IA Completa</title>
+    <title>Dose Inteligente</title>
+    <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
         body {
             background: #F5F7FA;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            padding: 20px;
-            min-height: 100vh;
+            overflow-x: hidden;
         }
-        .container { max-width: 600px; margin: 0 auto; }
-        .header { text-align: center; padding: 20px 0 30px; }
-        .header h1 { font-size: 1.8rem; color: #2F80ED; }
-        .header p { color: #828282; }
+
+        /* Container principal */
+        .app-container {
+            max-width: 550px;
+            margin: 0 auto;
+            background: #F5F7FA;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Header */
+        .app-header {
+            background: white;
+            padding: 20px 20px 12px;
+            border-bottom: 1px solid #E0E0E0;
+        }
+        .app-header h1 {
+            font-size: 1.8rem;
+            color: #2F80ED;
+            letter-spacing: -0.3px;
+        }
+        .app-header p {
+            font-size: 0.85rem;
+            color: #828282;
+            margin-top: 4px;
+        }
+        .aviso-permanente {
+            background: #FFF3E0;
+            padding: 8px 12px;
+            font-size: 0.7rem;
+            text-align: center;
+            color: #ED6A2E;
+            border-radius: 20px;
+            margin-top: 10px;
+        }
+
+        /* Abas inferiores */
+        .tab-bar {
+            display: flex;
+            background: white;
+            border-top: 1px solid #E0E0E0;
+            border-bottom: 1px solid #E0E0E0;
+            margin-top: 8px;
+        }
+        .tab {
+            flex: 1;
+            text-align: center;
+            padding: 12px 0;
+            font-weight: 600;
+            color: #828282;
+            cursor: pointer;
+            transition: 0.2s;
+            background: white;
+            border: none;
+            font-size: 1rem;
+        }
+        .tab.active {
+            color: #2F80ED;
+            border-bottom: 2px solid #2F80ED;
+        }
+
+        /* Conteúdo das abas */
+        .page {
+            display: none;
+            padding: 20px 16px 80px;
+            flex: 1;
+        }
+        .page.active {
+            display: block;
+        }
+
+        /* Cards */
         .card {
             background: white;
-            border-radius: 24px;
+            border-radius: 28px;
             padding: 20px;
             margin-bottom: 20px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-            border: 1px solid #E0E0E0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+            border: 1px solid #EDEDF0;
         }
         .card-title {
-            font-size: 1.1rem;
+            font-size: 1.2rem;
             font-weight: 600;
             margin-bottom: 16px;
-            color: #333;
-            border-left: 3px solid #2F80ED;
+            border-left: 4px solid #2F80ED;
             padding-left: 12px;
+            color: #1E2A3E;
         }
+
+        /* Formulários */
         input, select, textarea {
             background: #F5F7FA;
             border: 1px solid #E0E0E0;
-            border-radius: 24px;
-            padding: 12px 16px;
-            font-size: 0.9rem;
-            width: 100%;
-            margin-bottom: 12px;
-            font-family: inherit;
-        }
-        button {
-            background: #2F80ED;
-            color: white;
-            padding: 12px 20px;
             border-radius: 40px;
-            border: none;
-            font-weight: 600;
-            cursor: pointer;
+            padding: 12px 16px;
             width: 100%;
-            margin-top: 8px;
+            font-size: 1rem;
+            margin-bottom: 12px;
         }
-        button:active { transform: scale(0.97); }
-        .btn-outline { background: transparent; border: 1px solid #2F80ED; color: #2F80ED; }
-        .btn-ia { background: #6C5CE7; }
-        .btn-danger { background: #EB5757; }
         .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
         .weekdays { display: flex; gap: 8px; flex-wrap: wrap; margin: 12px 0; }
         .weekday-btn {
-            background: #F5F7FA;
+            background: #F2F2F6;
             padding: 8px 12px;
             border-radius: 30px;
             font-size: 0.8rem;
             cursor: pointer;
-            border: 1px solid #E0E0E0;
+            transition: 0.1s;
         }
-        .weekday-btn.active { background: #2F80ED; color: white; border-color: #2F80ED; }
-        .schedule-item, .evento-item {
+        .weekday-btn.active { background: #2F80ED; color: white; }
+
+        button {
+            background: #2F80ED;
+            border: none;
+            border-radius: 40px;
+            padding: 12px 20px;
+            font-weight: 600;
+            font-size: 1rem;
+            color: white;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 8px;
+        }
+        button.btn-outline {
+            background: transparent;
+            border: 1px solid #2F80ED;
+            color: #2F80ED;
+        }
+        button.btn-danger { background: #EB5757; }
+        button.btn-secondary { background: #56CCF2; }
+
+        /* Itens de lista */
+        .schedule-item, .med-item-mini {
             background: #F5F7FA;
-            border-radius: 16px;
+            border-radius: 20px;
             padding: 12px;
             margin-bottom: 10px;
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
-        .checkbox-tomado { width: 22px; height: 22px; accent-color: #2F80ED; }
-        .stats-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 12px; text-align: center; }
-        .stat-card { background: #F5F7FA; border-radius: 20px; padding: 12px; }
-        .stat-number { font-size: 1.8rem; font-weight: 800; color: #2F80ED; }
-        .result-card { background: #F5F7FA; border-radius: 20px; padding: 16px; margin-bottom: 12px; border-left: 3px solid #56CCF2; }
-        .badge-ia {
-            background: #6C5CE7;
-            display: inline-block;
-            padding: 2px 8px;
-            border-radius: 20px;
-            font-size: 0.7rem;
-            color: white;
-            margin-left: 8px;
-        }
-        .med-item { background: #F5F7FA; border-radius: 20px; padding: 16px; margin-bottom: 16px; }
-        .tab-bar {
-            display: flex;
-            background: white;
-            border-radius: 40px;
-            padding: 6px;
-            margin-bottom: 20px;
-            gap: 8px;
-            border: 1px solid #E0E0E0;
-        }
-        .tab {
-            flex: 1;
+        .checkbox-tomado { width: 24px; height: 24px; accent-color: #2F80ED; }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2,1fr);
+            gap: 12px;
             text-align: center;
-            padding: 10px;
-            border-radius: 30px;
-            background: transparent;
-            color: #828282;
-            font-weight: 500;
-            cursor: pointer;
-            transition: 0.2s;
         }
-        .tab.active {
-            background: #2F80ED;
-            color: white;
+        .stat-card {
+            background: #F5F7FA;
+            border-radius: 20px;
+            padding: 12px;
         }
-        .tab-content { display: none; }
-        .tab-content.active { display: block; }
-        .modal-notification {
+        .stat-number { font-size: 2rem; font-weight: 800; color: #2F80ED; }
+
+        /* Tela de análise (fullscreen) */
+        .analysis-screen {
             position: fixed;
-            bottom: 20px;
-            left: 20px;
-            right: 20px;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #F5F7FA;
+            z-index: 1000;
+            overflow-y: auto;
+            padding: 20px;
+            display: none;
+        }
+        .analysis-screen.active {
+            display: block;
+        }
+        .analysis-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            position: sticky;
+            top: 0;
+            background: #F5F7FA;
+            padding: 10px 0;
+        }
+        .interaction-alert {
+            background: #EB5757;
+            color: white;
+            padding: 16px;
+            border-radius: 24px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .interaction-safe {
+            background: #2F80ED20;
+            color: #2F80ED;
+            border: 1px solid #2F80ED;
+        }
+        .med-analysis-card {
             background: white;
             border-radius: 28px;
-            padding: 20px;
-            z-index: 2000;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
-            border-top: 4px solid #2F80ED;
-            max-height: 80vh;
-            overflow-y: auto;
+            padding: 16px;
+            margin-bottom: 16px;
         }
-        @media (max-width: 600px) { .form-grid { grid-template-columns: 1fr; } }
+        .suggested-badge {
+            background: #FFE9D6;
+            color: #ED6A2E;
+            font-size: 0.7rem;
+            padding: 4px 8px;
+            border-radius: 50px;
+            display: inline-block;
+            margin-bottom: 8px;
+        }
+        .read-more {
+            color: #2F80ED;
+            font-weight: 600;
+            margin-top: 12px;
+            cursor: pointer;
+            display: inline-block;
+        }
+        .detailed-info {
+            display: none;
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid #E0E0E0;
+        }
+
+        /* Modal de alarme */
+        .alarm-modal {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            border-radius: 32px 32px 0 0;
+            padding: 24px 20px 32px;
+            z-index: 2000;
+            box-shadow: 0 -4px 20px rgba(0,0,0,0.1);
+            transform: translateY(100%);
+            transition: 0.3s;
+        }
+        .alarm-modal.show {
+            transform: translateY(0);
+        }
+        .alarm-modal h2 { font-size: 1.8rem; margin-bottom: 8px; }
+        .alarm-modal .btn-grande {
+            background: #2F80ED;
+            font-size: 1.3rem;
+            padding: 16px;
+            margin: 16px 0;
+        }
+        .btn-pequeno { background: #A0AAB5; margin-top: 8px; }
+
+        /* Outros */
+        .badge-ia { background: #6C5CE7; color: white; font-size: 0.7rem; padding: 2px 8px; border-radius: 20px; margin-left: 8px; }
+        @media (max-width: 500px) { .form-grid { grid-template-columns: 1fr; } }
     </style>
 </head>
 <body>
-<div class="container">
-    <div class="header">
-        <h1>💊 Dose Inteligente <span class="badge-ia">IA Gemini</span></h1>
-        <p>Seu assistente pessoal de medicamentos</p>
+<div class="app-container">
+    <div class="app-header">
+        <h1>💊 Dose Inteligente</h1>
+        <p>Gerenciamento com IA e alarmes inteligentes</p>
+        <div class="aviso-permanente">⚠️ Este aplicativo não substitui orientação médica</div>
     </div>
 
     <!-- Abas -->
     <div class="tab-bar">
-        <div class="tab active" data-tab="home">Início</div>
-        <div class="tab" data-tab="meds">Medicamentos</div>
-        <div class="tab" data-tab="info">Informações</div>
+        <button class="tab active" data-tab="inicio">Início</button>
+        <button class="tab" data-tab="medicamentos">Medicamentos</button>
+        <button class="tab" data-tab="explorar">Explorar IA</button>
     </div>
 
-    <!-- Aba: Início -->
-    <div id="tab-home" class="tab-content active">
+    <!-- Página Início -->
+    <div id="inicio" class="page active">
         <div class="card">
             <div class="card-title">📊 Estatísticas</div>
             <div class="stats-grid">
-                <div class="stat-card"><div class="stat-number" id="totalEventos">0</div><div>Total</div></div>
+                <div class="stat-card"><div class="stat-number" id="totalEventos">0</div><div>Registros</div></div>
                 <div class="stat-card"><div class="stat-number" id="taxaAcertos">0%</div><div>Adesão</div></div>
-                <div class="stat-card"><div class="stat-number" id="tomadosHoje">0</div><div>Hoje</div></div>
+                <div class="stat-card"><div class="stat-number" id="tomadosHoje">0</div><div>Tomados hoje</div></div>
                 <div class="stat-card"><div class="stat-number" id="ignoradosHoje">0</div><div>Ignorados</div></div>
             </div>
-            <canvas id="graficoAdesao" style="margin-top: 16px; max-height: 180px;"></canvas>
+            <canvas id="graficoAdesao" style="margin-top: 16px; max-height: 160px;"></canvas>
         </div>
-
         <div class="card">
             <div class="card-title">✅ Checklist de hoje</div>
             <div id="checklistContainer"></div>
         </div>
-
         <div class="card">
             <div class="card-title">⏰ Próximos horários</div>
-            <div id="proximosResumo"></div>
+            <div id="proximosContainer"></div>
         </div>
     </div>
 
-    <!-- Aba: Medicamentos -->
-    <div id="tab-meds" class="tab-content">
+    <!-- Página Medicamentos -->
+    <div id="medicamentos" class="page">
         <div class="card">
-            <div class="card-title">➕ Novo medicamento</div>
-            <div id="medicamentosFormList"></div>
-            <button id="btnAdicionarMedForm" class="btn-outline">+ Adicionar outro</button>
-            <button id="btnSalvarMultiplos">💾 Salvar medicamentos</button>
+            <div class="card-title">➕ Cadastrar medicamento(s)</div>
+            <div id="medFormList"></div>
+            <button id="addMedButton" class="btn-outline">+ Adicionar outro</button>
+            <button id="continueAnalysisButton">Continuar → Análise com IA</button>
         </div>
-
         <div class="card">
-            <div class="card-title">📋 Meus medicamentos</div>
-            <div id="listaMedicamentosComEventos"></div>
+            <div class="card-title">📋 Seus medicamentos</div>
+            <div id="medList"></div>
         </div>
     </div>
 
-    <!-- Aba: Informações com IA -->
-    <div id="tab-info" class="tab-content">
+    <!-- Página Explorar IA -->
+    <div id="explorar" class="page">
         <div class="card">
-            <div class="card-title">🔍 Wiki de medicamentos <span class="badge-ia">IA</span></div>
-            <input type="text" id="searchInput" placeholder="Ex: dipirona, omeprazol, ou qualquer remédio">
-            <button id="btnBuscarWiki" class="btn-ia">🤖 Pesquisar com IA</button>
-            <div id="wikiResultados" style="margin-top: 12px;"></div>
+            <div class="card-title">🔍 Tire dúvidas com IA</div>
+            <input type="text" id="iaPergunta" placeholder="Ex: O que é bom para dor de cabeça?">
+            <button id="iaPerguntarBtn">🤖 Perguntar</button>
+            <div id="iaResposta" class="result-card" style="margin-top: 16px; background: #F5F7FA; padding: 16px; border-radius: 24px;"></div>
         </div>
+    </div>
+</div>
 
-        <div class="card">
-            <div class="card-title">⚖️ Comparar interações <span class="badge-ia">IA</span></div>
-            <select id="selectRemedio1" style="margin-bottom: 8px;"></select>
-            <select id="selectRemedio2" style="margin-bottom: 8px;"></select>
-            <button id="btnCompararAvancado" class="btn-ia">🤖 Analisar com IA</button>
-            <div id="comparacaoDetalhada" class="result-card" style="margin-top: 12px;">Selecione dois medicamentos</div>
-        </div>
-
-        <div class="card">
-            <div class="card-title">🏪 Farmácias próximas</div>
-            <button id="btnFarmProximas">📍 Abrir mapa</button>
-        </div>
-
-        <div class="card">
-            <div class="card-title">💾 Backup</div>
-            <button id="btnExportar">💾 Exportar dados</button>
-            <button id="btnImportar" style="margin-top: 8px;">📂 Importar backup</button>
-            <input type="file" id="importFile" accept=".json" style="display:none">
-        </div>
+<!-- Tela de Análise (fullscreen) -->
+<div id="analysisScreen" class="analysis-screen">
+    <div class="analysis-header">
+        <h2>🧠 Análise da IA</h2>
+        <button id="closeAnalysisBtn" class="btn-outline" style="width: auto; padding: 8px 16px;">Fechar</button>
+    </div>
+    <div id="analysisContent"></div>
+    <div style="display: flex; gap: 12px; margin: 30px 0 50px;">
+        <button id="reviseCadastroBtn" class="btn-outline" style="flex:1">✏️ Revisar cadastro</button>
+        <button id="confirmTreatmentBtn" style="flex:1; background:#2F80ED;">✅ Confirmar e iniciar</button>
     </div>
 </div>
 
 <script>
     // --------------------------------------------------------------
-    // CONFIGURAÇÃO DA IA GEMINI (NOVA CHAVE)
+    // 1. IA Gemini (chave já configurada)
     // --------------------------------------------------------------
-    const GEMINI_API_KEY = "AIzaSyCWv7SMEQfKXUzNLdAwu5YWZ9I3dpYZe8U";
-    const MODELO = "gemini-2.5-flash";
-    
-    async function perguntarGemini(pergunta, tipo = "geral") {
-        let prompt = "";
-        if (tipo === "medicamento") {
-            prompt = `Você é um farmacêutico. Para o medicamento "${pergunta}", responda em português de forma completa e organizada com: indicações, como tomar, horário recomendado, duração, dose, interações, contraindicações e efeitos colaterais.`;
-        } else if (tipo === "interacao") {
-            prompt = `Analise detalhadamente a interação entre ${pergunta}. Responda em português com: nível de gravidade, explicação, riscos e recomendações.`;
-        } else {
-            prompt = `Responda em português de forma clara e segura sobre medicamentos: ${pergunta}`;
-        }
-        
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODELO}:generateContent?key=${GEMINI_API_KEY}`;
-        const corpo = { contents: [{ parts: [{ text: prompt }] }] };
+    const GEMINI_KEY = "AIzaSyCWv7SMEQfKXUzNLdAwu5YWZ9I3dpYZe8U";
+    const MODEL = "gemini-2.5-flash";
+
+    async function callGemini(prompt, tipo = "geral") {
+        let fullPrompt = "";
+        if (tipo === "interacoes") fullPrompt = `Analise TODOS os seguintes medicamentos: ${prompt}. Responda em JSON: {"temInteracao": true/false, "explicacao": "texto curto", "solucao": "sugestão"}`;
+        else if (tipo === "sugestao") fullPrompt = `Para o medicamento "${prompt.nome}", o usuário não informou: ${prompt.faltando}. Sugira valores razoáveis para dose, frequência e horários. Responda em JSON.`;
+        else fullPrompt = `Responda em português, de forma clara e segura: ${prompt}`;
         
         try {
-            const resposta = await fetch(url, {
+            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${GEMINI_KEY}`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(corpo)
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ contents: [{ parts: [{ text: fullPrompt }] }] })
             });
-            if (!resposta.ok) throw new Error(`HTTP ${resposta.status}`);
-            const dados = await resposta.json();
-            return dados.candidates?.[0]?.content?.parts?.[0]?.text || "Erro na resposta da IA";
-        } catch (erro) {
-            console.error("Erro Gemini:", erro);
-            return `❌ Erro ao consultar IA: ${erro.message}`;
-        }
+            if (!res.ok) throw new Error(await res.text());
+            const data = await res.json();
+            return data.candidates?.[0]?.content?.parts?.[0]?.text || "Erro na IA";
+        } catch(e) { console.error(e); return "Falha na comunicação com IA"; }
     }
 
     // --------------------------------------------------------------
-    // DADOS GLOBAIS
+    // 2. Dados globais
     // --------------------------------------------------------------
-    let medicamentos = [];
+    let medicamentos = [];     // cada um: { id, nome, dosagem, horarios, diasAtivos, infoIA (resumo, cuidados, comoTomar, etc) }
     let eventosPendentes = [];
     let historico = [];
     let nextId = 1;
     let alarmesAtivos = new Map();
     let audioCtx = null;
-    let speech = window.speechSynthesis;
     let grafico = null;
 
-    // Persistência
-    function carregar() {
-        let m = localStorage.getItem("dose_medicamentos"); if (m) medicamentos = JSON.parse(m);
-        let e = localStorage.getItem("dose_eventos"); if (e) eventosPendentes = JSON.parse(e);
-        let h = localStorage.getItem("dose_historico"); if (h) historico = JSON.parse(h);
-        if (medicamentos.length) nextId = Math.max(...medicamentos.map(m => m.id), 0) + 1;
+    // Elementos
+    const medFormList = document.getElementById("medFormList");
+    const medListDiv = document.getElementById("medList");
+    const checklistDiv = document.getElementById("checklistContainer");
+    const proximosDiv = document.getElementById("proximosContainer");
+    const analysisScreen = document.getElementById("analysisScreen");
+    const analysisContent = document.getElementById("analysisContent");
+
+    // --------------------------------------------------------------
+    // 3. Persistência
+    // --------------------------------------------------------------
+    function carregarDados() {
+        try {
+            medicamentos = JSON.parse(localStorage.getItem("dose_meds") || "[]");
+            eventosPendentes = JSON.parse(localStorage.getItem("dose_eventos") || "[]");
+            historico = JSON.parse(localStorage.getItem("dose_hist") || "[]");
+            if (medicamentos.length) nextId = Math.max(...medicamentos.map(m=>m.id),0)+1;
+        } catch(e) {}
         atualizarTudo();
-        preencherSelects();
-        renderizarListaUnificada();
+        reagendarAlarmes();
+        renderizarListaMedicamentos();
     }
-    function salvar() {
-        localStorage.setItem("dose_medicamentos", JSON.stringify(medicamentos));
+    function salvarDados() {
+        localStorage.setItem("dose_meds", JSON.stringify(medicamentos));
         localStorage.setItem("dose_eventos", JSON.stringify(eventosPendentes));
-        localStorage.setItem("dose_historico", JSON.stringify(historico));
+        localStorage.setItem("dose_hist", JSON.stringify(historico));
         atualizarTudo();
-        preencherSelects();
-        renderizarListaUnificada();
+        renderizarListaMedicamentos();
     }
 
-    // Funções auxiliares
-    function gerarHorariosPorIntervalo(intervaloHoras, inicio = "08:00") {
-        if (intervaloHoras <= 0) return [inicio];
-        let horarios = [];
-        let [h, m] = inicio.split(":").map(Number);
-        let mins = h * 60 + m;
-        for (let i = 0; i < 24 / intervaloHoras; i++) {
-            let mins2 = (mins + i * intervaloHoras * 60) % 1440;
-            horarios.push(`${Math.floor(mins2/60).toString().padStart(2,'0')}:${(mins2%60).toString().padStart(2,'0')}`);
+    // --------------------------------------------------------------
+    // 4. Alarmes e notificações
+    // --------------------------------------------------------------
+    function tocarSom() {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        try {
+            const osc = audioCtx.createOscillator(), gain = audioCtx.createGain();
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            osc.frequency.value = 880; gain.gain.value = 0.2;
+            osc.start(); gain.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + 2);
+            osc.stop(audioCtx.currentTime + 2);
+        } catch(e) {}
+        if (navigator.vibrate) navigator.vibrate([500,300,500]);
+    }
+
+    function mostrarAlarme(evento) {
+        const med = medicamentos.find(m => m.id === evento.medicamentoId);
+        if (!med) return;
+        const modal = document.createElement("div");
+        modal.className = "alarm-modal";
+        modal.innerHTML = `
+            <h2>💊 ${med.nome}</h2>
+            <p style="font-size:1.2rem;">Horário: ${evento.horario}</p>
+            <p style="margin: 8px 0;">${med.infoIA?.instrucaoCurta || "Tome conforme orientação médica."}</p>
+            <button class="btn-grande" id="tomarAgoraBtn">✅ TOMAR AGORA</button>
+            <button id="adiarBtn" class="btn-pequeno">⏰ Adiar (10 min)</button>
+            <button id="lerMaisAlarme" class="btn-outline" style="margin-top: 12px;">📖 Ler mais</button>
+        `;
+        document.body.appendChild(modal);
+        setTimeout(() => modal.classList.add("show"), 10);
+        const fechar = () => { modal.classList.remove("show"); setTimeout(()=>modal.remove(), 300); };
+        document.getElementById("tomarAgoraBtn").onclick = () => {
+            marcarTomado(evento.id);
+            if (confirm("Notificar responsável?")) notificarResponsavel(`${med.nome} tomado às ${evento.horario}`);
+            fechar();
+        };
+        document.getElementById("adiarBtn").onclick = () => {
+            const novaData = new Date(Date.now() + 10*60000);
+            evento.dataReferencia = novaData.toISOString();
+            salvarDados();
+            fechar();
+        };
+        document.getElementById("lerMaisAlarme").onclick = () => {
+            alert(med.infoIA?.detalhes || "Consulte a bula do medicamento.");
+        };
+        // Enviar sinal arduino (simulação)
+        fetchArduino(med.nome, evento.horario);
+    }
+
+    function fetchArduino(medNome, horario) {
+        // Endpoint futuro
+        console.log(`[Arduino] POST /disparar-motor - ${medNome} ${horario}`);
+        // fetch('/disparar-motor', { method: 'POST', body: JSON.stringify({ medicamento: medNome, horario }) });
+    }
+
+    function notificarResponsavel(mensagem) {
+        if (Notification.permission === "granted") {
+            new Notification("Dose Inteligente - Responsável", { body: mensagem });
+        } else {
+            alert("Simulação: Notificar responsável: " + mensagem);
         }
-        return [...new Set(horarios)].sort();
     }
 
-    function adicionarMedicamentoDefinitivo(med) {
-        med.id = nextId++;
-        if (!med.horarios || med.horarios.length === 0) med.horarios = ["08:00"];
-        if (!med.diasAtivos || med.diasAtivos.length === 0) med.diasAtivos = [0,1,2,3,4,5,6];
-        medicamentos.push(med);
-        gerarEventosParaMed(med);
-        salvar();
+    function marcarTomado(eventoId) {
+        const evento = eventosPendentes.find(e => e.id === eventoId);
+        if (evento && !evento.tomado) {
+            evento.tomado = true;
+            historico.push({ medicamentoId: evento.medicamentoId, horario: evento.horario, status: "tomado", timestamp: Date.now() });
+            salvarDados();
+        }
     }
 
-    function gerarEventosParaMed(med) {
-        let hoje = new Date();
-        let novos = [];
+    function reagendarAlarmes() {
+        for (let [id, t] of alarmesAtivos) clearTimeout(t);
+        alarmesAtivos.clear();
+        const agora = Date.now();
+        for (let ev of eventosPendentes) {
+            if (ev.tomado) continue;
+            const tempo = new Date(ev.dataReferencia).getTime() - agora;
+            if (tempo > 0) {
+                const id = setTimeout(() => {
+                    tocarSom();
+                    if (Notification.permission === "granted") new Notification("Dose Inteligente", { body: `Hora de tomar ${medicamentos.find(m=>m.id===ev.medicamentoId)?.nome}` });
+                    mostrarAlarme(ev);
+                }, tempo);
+                alarmesAtivos.set(ev.id, id);
+            }
+        }
+    }
+
+    // --------------------------------------------------------------
+    // 5. Geração de eventos
+    // --------------------------------------------------------------
+    function gerarEventos(med) {
+        const hoje = new Date();
+        const novos = [];
         for (let i = 0; i < 14; i++) {
-            let data = new Date(); data.setDate(hoje.getDate() + i);
-            let dia = data.getDay();
+            const data = new Date(); data.setDate(hoje.getDate() + i);
+            const dia = data.getDay();
             if (med.diasAtivos.includes(dia)) {
                 for (let hor of med.horarios) {
-                    let [h, m] = hor.split(":").map(Number);
-                    let dt = new Date(data); dt.setHours(h, m, 0, 0);
-                    if (dt > new Date() && !eventosPendentes.some(ev => ev.medicamentoId === med.id && ev.dataReferencia === dt.toISOString())) {
+                    const [h,m] = hor.split(":").map(Number);
+                    const dt = new Date(data); dt.setHours(h,m,0,0);
+                    if (dt > new Date() && !eventosPendentes.some(e => e.medicamentoId === med.id && e.dataReferencia === dt.toISOString())) {
                         novos.push({ id: Date.now() + Math.random(), medicamentoId: med.id, horario: hor, dataReferencia: dt.toISOString(), tomado: false });
                     }
                 }
             }
         }
         eventosPendentes.push(...novos);
-        eventosPendentes.sort((a, b) => new Date(a.dataReferencia) - new Date(b.dataReferencia));
+        eventosPendentes.sort((a,b)=>new Date(a.dataReferencia)-new Date(b.dataReferencia));
         reagendarAlarmes();
+        salvarDados();
     }
 
-    // Alarmes
-    function tocarSom() {
-        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        try {
-            let osc = audioCtx.createOscillator();
-            let gain = audioCtx.createGain();
-            osc.connect(gain); gain.connect(audioCtx.destination);
-            osc.frequency.value = 880; gain.gain.value = 0.3;
-            osc.start(); gain.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + 3);
-            osc.stop(audioCtx.currentTime + 3);
-        } catch(e) {}
-        if (navigator.vibrate) navigator.vibrate([500,300,500]);
-    }
-    
-    function reagendarAlarmes() {
-        for (let [id, timeout] of alarmesAtivos) clearTimeout(timeout);
-        alarmesAtivos.clear();
-        let agora = new Date();
-        for (let ev of eventosPendentes) {
-            if (ev.tomado) continue;
-            let dt = new Date(ev.dataReferencia);
-            if (dt > agora) {
-                let med = medicamentos.find(m => m.id === ev.medicamentoId);
-                let timeoutId = setTimeout(() => {
-                    tocarSom();
-                    if (Notification.permission === "granted") new Notification("Dose Inteligente", { body: `${med?.nome || "Medicamento"} - Hora de tomar!` });
-                    alert(`🔔 Hora de tomar ${med?.nome || "medicamento"}!`);
-                }, dt - agora);
-                alarmesAtivos.set(ev.id, timeoutId);
-            }
-        }
-    }
+    // --------------------------------------------------------------
+    // 6. Renderização da UI (checklist, próximos, estatísticas)
+    // --------------------------------------------------------------
+    function atualizarTudo() {
+        // checklist
+        const hoje = new Date().toDateString();
+        const eventosHoje = eventosPendentes.filter(e => new Date(e.dataReferencia).toDateString() === hoje && !e.tomado);
+        checklistDiv.innerHTML = eventosHoje.length ? eventosHoje.map(e => {
+            const med = medicamentos.find(m => m.id === e.medicamentoId);
+            return `<div class="schedule-item"><div><strong>${med?.nome}</strong> - ${e.horario}</div><div><input type="checkbox" class="checkbox-tomado" data-id="${e.id}"></div></div>`;
+        }).join('') : "<div style='padding:16px;text-align:center'>✅ Nada pendente hoje</div>";
+        document.querySelectorAll(".checkbox-tomado").forEach(cb => cb.onclick = () => marcarTomado(parseInt(cb.dataset.id)));
 
-    // Renderização
-    function renderizarChecklist() {
-        let container = document.getElementById("checklistContainer");
-        let hoje = new Date().toDateString();
-        let eventosHoje = eventosPendentes.filter(ev => new Date(ev.dataReferencia).toDateString() === hoje && !ev.tomado);
-        if (eventosHoje.length === 0) { container.innerHTML = "<div style='text-align:center; padding:16px;'>✅ Nada pendente hoje</div>"; return; }
-        container.innerHTML = eventosHoje.map(ev => {
-            let med = medicamentos.find(m => m.id === ev.medicamentoId);
-            return `<div class="schedule-item"><div><strong>${med?.nome}</strong> - ${ev.horario}</div><div><input type="checkbox" class="checkbox-tomado" data-id="${ev.id}"></div></div>`;
-        }).join("");
-        document.querySelectorAll(".checkbox-tomado").forEach(cb => {
-            cb.addEventListener("change", e => {
-                let ev = eventosPendentes.find(ev => ev.id == cb.dataset.id);
-                if (ev && cb.checked) {
-                    ev.tomado = true;
-                    historico.push({ medicamentoId: ev.medicamentoId, horario: ev.horario, status: "tomado", timestamp: Date.now() });
-                    salvar();
-                    renderizarChecklist();
-                    atualizarStats();
-                    renderizarProximosResumo();
-                }
-            });
-        });
-    }
+        // próximos
+        const futuros = eventosPendentes.filter(e => !e.tomado && new Date(e.dataReferencia) > new Date()).slice(0,5);
+        proximosDiv.innerHTML = futuros.length ? futuros.map(e => {
+            const med = medicamentos.find(m => m.id === e.medicamentoId);
+            return `<div class="schedule-item"><div><strong>${med?.nome}</strong></div><div>${new Date(e.dataReferencia).toLocaleDateString()} ${e.horario}</div></div>`;
+        }).join('') : "<div style='padding:16px;text-align:center'>Nenhum evento futuro</div>";
 
-    function renderizarProximosResumo() {
-        let container = document.getElementById("proximosResumo");
-        let agora = new Date();
-        let futuros = eventosPendentes.filter(ev => !ev.tomado && new Date(ev.dataReferencia) > agora).slice(0,5);
-        if (futuros.length === 0) { container.innerHTML = "<div style='text-align:center; padding:16px;'>Nenhum evento futuro</div>"; return; }
-        container.innerHTML = futuros.map(ev => {
-            let med = medicamentos.find(m => m.id === ev.medicamentoId);
-            let data = new Date(ev.dataReferencia);
-            return `<div class="schedule-item"><div><strong>${med?.nome}</strong></div><div>${data.toLocaleDateString('pt-BR')} ${ev.horario}</div></div>`;
-        }).join("");
-    }
-
-    function renderizarListaUnificada() {
-        let container = document.getElementById("listaMedicamentosComEventos");
-        if (medicamentos.length === 0) { container.innerHTML = "<div style='padding:20px;text-align:center'>Nenhum medicamento cadastrado</div>"; return; }
-        container.innerHTML = medicamentos.map(med => `
-            <div style="background:#F5F7FA; border-radius:16px; padding:12px; margin-bottom:12px;">
-                <div style="display:flex; justify-content:space-between;">
-                    <strong>${med.nome}</strong>
-                    <button onclick="removerMed(${med.id})" style="background:#EB5757; padding:4px 12px; font-size:0.75rem; width:auto;">Remover</button>
-                </div>
-                <div style="font-size:0.8rem; color:#828282;">Horários: ${med.horarios.join(", ")}</div>
-            </div>
-        `).join("");
-    }
-
-    function atualizarStats() {
-        let total = historico.length;
-        let tomados = historico.filter(h => h.status === "tomado").length;
-        let taxa = total === 0 ? 0 : Math.round(tomados / total * 100);
-        let hoje = new Date().toDateString();
-        let tomadosHoje = historico.filter(h => h.status === "tomado" && new Date(h.timestamp).toDateString() === hoje).length;
-        let ignoradosHoje = historico.filter(h => h.status === "pulado" && new Date(h.timestamp).toDateString() === hoje).length;
+        // estatísticas
+        const total = historico.length;
+        const tomados = historico.filter(h=>h.status==="tomado").length;
+        const taxa = total?Math.round(tomados/total*100):0;
+        const hojeStats = historico.filter(h=>h.status==="tomado" && new Date(h.timestamp).toDateString()===hoje).length;
+        const ignorados = historico.filter(h=>h.status==="pulado" && new Date(h.timestamp).toDateString()===hoje).length;
         document.getElementById("totalEventos").innerText = total;
         document.getElementById("taxaAcertos").innerText = `${taxa}%`;
-        document.getElementById("tomadosHoje").innerText = tomadosHoje;
-        document.getElementById("ignoradosHoje").innerText = ignoradosHoje;
-        
-        let labels = [], dados = [];
-        for (let i=6; i>=0; i--) { let d=new Date(); d.setDate(d.getDate()-i); labels.push(d.toLocaleDateString('pt-BR')); dados.push(historico.filter(h=>h.status==="tomado" && new Date(h.timestamp).toDateString()===d.toDateString()).length); }
-        if (grafico) grafico.destroy();
-        let ctx = document.getElementById('graficoAdesao').getContext('2d');
-        grafico = new Chart(ctx, { type: 'line', data: { labels, datasets: [{ label: 'Tomados', data: dados, borderColor: '#2F80ED', tension: 0.3, fill: false }] } });
-    }
-    
-    function atualizarTudo() { renderizarChecklist(); renderizarProximosResumo(); atualizarStats(); renderizarListaUnificada(); }
-    function removerMed(id) { medicamentos = medicamentos.filter(m=>m.id!==id); eventosPendentes=eventosPendentes.filter(ev=>ev.medicamentoId!==id); historico=historico.filter(h=>h.medicamentoId!==id); salvar(); renderizarListaUnificada(); renderizarChecklist(); atualizarStats(); }
+        document.getElementById("tomadosHoje").innerText = hojeStats;
+        document.getElementById("ignoradosHoje").innerText = ignorados;
 
-    // Formulário múltiplo
-    function adicionarFormMed() {
-        let container = document.getElementById("medicamentosFormList");
-        let div = document.createElement("div"); div.className = "med-item";
-        div.innerHTML = `
-            <input type="text" placeholder="Nome do medicamento *" class="medNome" style="margin-bottom:8px;">
-            <div class="form-grid">
-                <input type="text" placeholder="Dosagem" class="medDosagem">
-                <input type="text" placeholder="Horários (ex: 08:00,14:00)" class="medHorarios">
+        // gráfico
+        const labels = [], data = [];
+        for (let i=6; i>=0; i--) { let d=new Date(); d.setDate(d.getDate()-i); labels.push(d.toLocaleDateString()); data.push(historico.filter(h=>h.status==="tomado" && new Date(h.timestamp).toDateString()===d.toDateString()).length); }
+        if(grafico) grafico.destroy();
+        const ctx = document.getElementById('graficoAdesao').getContext('2d');
+        grafico = new Chart(ctx, { type:'line', data:{ labels, datasets:[{ label:'Tomados', data, borderColor:'#2F80ED', tension:0.3 }] } });
+    }
+
+    function renderizarListaMedicamentos() {
+        medListDiv.innerHTML = medicamentos.map(med => `
+            <div class="schedule-item">
+                <div><strong>${med.nome}</strong> ${med.dosagem?`(${med.dosagem})`:''}<br><span style="font-size:0.7rem;">${med.horarios.join(", ")}</span></div>
+                <button class="btn-danger" style="width:auto; padding:6px 12px;" onclick="removerMed(${med.id})">Remover</button>
             </div>
+        `).join('');
+        if(!medicamentos.length) medListDiv.innerHTML = "<div style='text-align:center; padding:20px'>Nenhum medicamento cadastrado</div>";
+    }
+    window.removerMed = (id) => {
+        medicamentos = medicamentos.filter(m=>m.id!==id);
+        eventosPendentes = eventosPendentes.filter(e=>e.medicamentoId!==id);
+        historico = historico.filter(h=>h.medicamentoId!==id);
+        salvarDados();
+    };
+
+    // --------------------------------------------------------------
+    // 7. Formulário dinâmico de cadastro
+    // --------------------------------------------------------------
+    function adicionarFormMed() {
+        const div = document.createElement("div"); div.className = "med-item";
+        div.innerHTML = `
+            <div class="form-grid">
+                <input type="text" placeholder="Nome do medicamento *" class="medNome">
+                <input type="text" placeholder="Dosagem (ex: 500mg)" class="medDosagem">
+            </div>
+            <input type="text" placeholder="Horários (ex: 08:00,14:00)" class="medHorarios">
+            <select class="medIntervalo"><option value="0">-- Intervalo --</option><option value="4">4h</option><option value="6">6h</option><option value="8">8h</option><option value="12">12h</option><option value="24">1x/dia</option></select>
             <div class="weekdays">
                 <span data-day="0" class="weekday-btn">Dom</span><span data-day="1" class="weekday-btn">Seg</span><span data-day="2" class="weekday-btn">Ter</span><span data-day="3" class="weekday-btn">Qua</span><span data-day="4" class="weekday-btn">Qui</span><span data-day="5" class="weekday-btn">Sex</span><span data-day="6" class="weekday-btn">Sáb</span>
             </div>
-            <button class="remove-med-btn" style="background:#EB5757; margin-top:8px; width:auto;">Remover</button>
+            <button class="remove-form-btn" style="background:#EB5757; margin-top:8px;">Remover este medicamento</button>
         `;
-        div.querySelectorAll(".weekday-btn").forEach(btn => btn.addEventListener("click", e => { e.stopPropagation(); btn.classList.toggle("active"); }));
-        div.querySelector(".remove-med-btn").onclick = () => div.remove();
-        container.appendChild(div);
+        div.querySelectorAll(".weekday-btn").forEach(btn => btn.onclick = e => { e.stopPropagation(); btn.classList.toggle("active"); });
+        div.querySelector(".remove-form-btn").onclick = () => div.remove();
+        medFormList.appendChild(div);
     }
-    
-    function prepararSalvar() {
-        let forms = document.querySelectorAll("#medicamentosFormList .med-item");
-        if (forms.length === 0) { alert("Adicione pelo menos um medicamento"); return; }
-        for (let form of forms) {
-            let nome = form.querySelector(".medNome").value.trim();
-            if (!nome) continue;
-            let dosagem = form.querySelector(".medDosagem").value.trim();
-            let horariosStr = form.querySelector(".medHorarios").value.trim();
-            let horarios = horariosStr ? horariosStr.split(",").map(h=>h.trim()) : ["08:00"];
-            let dias = [];
-            form.querySelectorAll(".weekday-btn.active").forEach(btn => dias.push(parseInt(btn.dataset.day)));
-            if (dias.length === 0) dias = [0,1,2,3,4,5,6];
-            adicionarMedicamentoDefinitivo({ nome, dosagem, horarios, diasAtivos: dias });
+    document.getElementById("addMedButton").onclick = adicionarFormMed;
+    adicionarFormMed();
+
+    // --------------------------------------------------------------
+    // 8. Análise completa com IA (tela full)
+    // --------------------------------------------------------------
+    document.getElementById("continueAnalysisButton").onclick = async () => {
+        // Coletar dados dos formulários
+        const forms = document.querySelectorAll("#medFormList .med-item");
+        if(!forms.length) { alert("Adicione pelo menos um medicamento"); return; }
+        const medicamentosTemp = [];
+        for(let form of forms) {
+            const nome = form.querySelector(".medNome").value.trim();
+            if(!nome) continue;
+            const dosagem = form.querySelector(".medDosagem").value.trim();
+            let horarios = form.querySelector(".medHorarios").value.trim().split(",").map(h=>h.trim()).filter(h=>h);
+            const intervalo = parseInt(form.querySelector(".medIntervalo").value);
+            if(!horarios.length && intervalo) horarios = gerarHorariosPorIntervalo(intervalo);
+            const dias = Array.from(form.querySelectorAll(".weekday-btn.active")).map(btn => parseInt(btn.dataset.day));
+            medicamentosTemp.push({ nome, dosagem, horarios: horarios.length?horarios:["08:00"], diasAtivos: dias.length?dias:[0,1,2,3,4,5,6] });
         }
-        document.getElementById("medicamentosFormList").innerHTML = "";
-        adicionarFormMed();
-        alert("Medicamentos salvos!");
-    }
+        if(!medicamentosTemp.length) { alert("Nenhum medicamento válido"); return; }
+        analysisScreen.classList.add("active");
+        analysisContent.innerHTML = "<div style='text-align:center'>⏳ IA analisando medicamentos...</div>";
+        
+        // 1) Verificar interações
+        const nomes = medicamentosTemp.map(m=>m.nome).join(", ");
+        const interacaoResposta = await callGemini(nomes, "interacoes");
+        let temInteracao = false, explicacao = "", solucao = "";
+        try {
+            const json = JSON.parse(interacaoResposta);
+            temInteracao = json.temInteracao;
+            explicacao = json.explicacao;
+            solucao = json.solucao;
+        } catch(e) { temInteracao = interacaoResposta.includes("interação"); explicacao = interacaoResposta; }
 
-    // Wiki com IA
-    async function exibirWikiComIA() {
-        let termo = document.getElementById("searchInput").value.trim();
-        if (!termo) { alert("Digite um medicamento"); return; }
-        let div = document.getElementById("wikiResultados");
-        div.innerHTML = "<div class='result-card'>⏳ Consultando IA...</div>";
-        let resposta = await perguntarGemini(termo, "medicamento");
-        div.innerHTML = `<div class="result-card"><strong>🔍 ${termo}</strong><br><br>${resposta.replace(/\n/g, '<br>')}</div>`;
-    }
-
-    // Comparador com IA
-    async function compararComIA() {
-        let id1 = document.getElementById("selectRemedio1").value;
-        let id2 = document.getElementById("selectRemedio2").value;
-        if (!id1 || !id2) { alert("Selecione dois medicamentos"); return; }
-        let m1 = medicamentos.find(m => m.id == id1);
-        let m2 = medicamentos.find(m => m.id == id2);
-        let div = document.getElementById("comparacaoDetalhada");
-        div.innerHTML = "<div class='result-card'>⏳ Analisando interação...</div>";
-        let resposta = await perguntarGemini(`${m1.nome} e ${m2.nome}`, "interacao");
-        div.innerHTML = `<div class="result-card"><strong>${m1.nome} + ${m2.nome}</strong><br><br>${resposta.replace(/\n/g, '<br>')}</div>`;
-    }
-
-    function preencherSelects() {
-        let s1 = document.getElementById("selectRemedio1"), s2 = document.getElementById("selectRemedio2");
-        s1.innerHTML = '<option value="">Selecione</option>'; s2.innerHTML = '<option value="">Selecione</option>';
-        medicamentos.forEach(m => {
-            let opt = document.createElement("option"); opt.value = m.id; opt.text = m.nome;
-            s1.appendChild(opt.cloneNode(true)); s2.appendChild(opt.cloneNode(true));
+        // 2) Para cada medicamento, buscar informações e sugerir campos faltantes
+        let html = `<div class="${temInteracao ? 'interaction-alert' : 'interaction-alert interaction-safe'}">
+                        ${temInteracao ? "⚠️ Atenção: Esses medicamentos possuem interação" : "✅ Nenhuma interação perigosa encontrada"}
+                        <p>${explicacao}</p>
+                        ${temInteracao && solucao ? `<p><strong>Solução sugerida:</strong> ${solucao}</p>` : ""}
+                    </div>`;
+        for(let med of medicamentosTemp) {
+            const infoIA = await callGemini(`Medicamento: ${med.nome}. Responda em JSON: {"resumo":"usos, como tomar, cuidados, efeitos","sugestaoFaltante":{}}`, "geral");
+            let resumo = infoIA;
+            let sugestoes = {};
+            try {
+                const parsed = JSON.parse(infoIA);
+                resumo = parsed.resumo;
+                sugestoes = parsed.sugestaoFaltante;
+            } catch(e) {}
+            const faltando = [];
+            if(!med.dosagem) faltando.push("dose");
+            if(!med.horarios || med.horarios.length===0) faltando.push("horários");
+            let sugestaoHtml = "";
+            if(faltando.length) {
+                const sugestaoIA = await callGemini({nome:med.nome, faltando:faltando.join(", ")}, "sugestao");
+                sugestaoHtml = `<div class="suggested-badge">🔵 O sistema sugere: ${sugestaoIA}</div>`;
+            }
+            html += `<div class="med-analysis-card">
+                        <strong style="font-size:1.2rem;">💊 ${med.nome}</strong> ${med.dosagem?`(${med.dosagem})`:''}
+                        ${sugestaoHtml}
+                        <div class="resumo-simples">${resumo.substring(0,200)}...</div>
+                        <div class="read-more" data-med="${med.nome}">📖 Ler mais</div>
+                        <div class="detailed-info" id="detalhes-${med.nome.replace(/ /g,'')}"></div>
+                    </div>`;
+        }
+        analysisContent.innerHTML = html;
+        // Botões "Ler mais" carregam detalhes sob demanda
+        document.querySelectorAll(".read-more").forEach(el => {
+            el.onclick = async () => {
+                const nome = el.dataset.med;
+                const detalhesDiv = document.getElementById(`detalhes-${nome.replace(/ /g,'')}`);
+                if(detalhesDiv.innerHTML) { detalhesDiv.style.display = detalhesDiv.style.display==='none'?'block':'none'; return; }
+                detalhesDiv.innerHTML = "⏳ Carregando...";
+                const resposta = await callGemini(`Forneça informações detalhadas sobre o medicamento ${nome}: composição, interações, contraindicações completas.`, "geral");
+                detalhesDiv.innerHTML = resposta;
+                detalhesDiv.style.display = 'block';
+            };
         });
-    }
-
-    // Outras funções
-    function abrirMapa() { if (navigator.geolocation) navigator.geolocation.getCurrentPosition(pos => window.open(`https://www.google.com/maps/search/farmácias/@${pos.coords.latitude},${pos.coords.longitude},15z`), () => window.open("https://www.google.com/maps/search/farmácias")); else window.open("https://www.google.com/maps/search/farmácias"); }
-    function exportarBackup() { let a=document.createElement("a"); a.href=URL.createObjectURL(new Blob([JSON.stringify({medicamentos,eventosPendentes,historico})],{type:"application/json"})); a.download="dose_backup.json"; a.click(); }
-    function importarBackup(file) { let reader=new FileReader(); reader.onload=e=>{ try{ let d=JSON.parse(e.target.result); medicamentos=d.medicamentos||[]; eventosPendentes=d.eventosPendentes||[]; historico=d.historico||[]; if(medicamentos.length) nextId=Math.max(...medicamentos.map(m=>m.id),0)+1; salvar(); alert("Restaurado!"); } catch(e){ alert("Arquivo inválido"); } }; reader.readAsText(file); }
-
-    // Abas
-    function initTabs() {
-        document.querySelectorAll(".tab").forEach(tab => {
-            tab.addEventListener("click", () => {
-                document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
-                document.querySelectorAll(".tab-content").forEach(c => c.classList.remove("active"));
-                tab.classList.add("active");
-                document.getElementById(`tab-${tab.dataset.tab}`).classList.add("active");
-            });
-        });
-    }
-
-    // INIT
-    function init() {
-        if (Notification.permission !== "granted") Notification.requestPermission();
-        carregar();
+    };
+    document.getElementById("closeAnalysisBtn").onclick = () => analysisScreen.classList.remove("active");
+    document.getElementById("reviseCadastroBtn").onclick = () => analysisScreen.classList.remove("active");
+    document.getElementById("confirmTreatmentBtn").onclick = () => {
+        // Salvar medicamentos do formulário atual
+        const forms = document.querySelectorAll("#medFormList .med-item");
+        for(let form of forms) {
+            const nome = form.querySelector(".medNome").value.trim();
+            if(!nome) continue;
+            const dosagem = form.querySelector(".medDosagem").value.trim();
+            let horarios = form.querySelector(".medHorarios").value.trim().split(",").map(h=>h.trim()).filter(h=>h);
+            const intervalo = parseInt(form.querySelector(".medIntervalo").value);
+            if(!horarios.length && intervalo) horarios = gerarHorariosPorIntervalo(intervalo);
+            const dias = Array.from(form.querySelectorAll(".weekday-btn.active")).map(btn => parseInt(btn.dataset.day));
+            const novoMed = {
+                id: nextId++, nome, dosagem, horarios: horarios.length?horarios:["08:00"], diasAtivos: dias.length?dias:[0,1,2,3,4,5,6],
+                infoIA: { instrucaoCurta: "Siga orientação médica", detalhes: "" }
+            };
+            medicamentos.push(novoMed);
+            gerarEventos(novoMed);
+        }
+        salvarDados();
+        medFormList.innerHTML = "";
         adicionarFormMed();
-        initTabs();
-        document.getElementById("btnAdicionarMedForm").onclick = adicionarFormMed;
-        document.getElementById("btnSalvarMultiplos").onclick = prepararSalvar;
-        document.getElementById("btnBuscarWiki").onclick = exibirWikiComIA;
-        document.getElementById("btnCompararAvancado").onclick = compararComIA;
-        document.getElementById("btnFarmProximas").onclick = abrirMapa;
-        document.getElementById("btnExportar").onclick = exportarBackup;
-        document.getElementById("btnImportar").onclick = () => document.getElementById("importFile").click();
-        document.getElementById("importFile").onchange = e => importarBackup(e.target.files[0]);
-        window.removerMed = removerMed;
+        analysisScreen.classList.remove("active");
+        alert("Tratamento iniciado! Os alarmes foram configurados.");
+    };
+
+    function gerarHorariosPorIntervalo(intervalo, inicio="08:00") {
+        let horarios = [];
+        let [h,m] = inicio.split(":").map(Number);
+        let mins = h*60+m;
+        for(let i=0;i<24/intervalo;i++) {
+            let total = (mins + i*intervalo*60)%1440;
+            horarios.push(`${Math.floor(total/60).toString().padStart(2,'0')}:${(total%60).toString().padStart(2,'0')}`);
+        }
+        return [...new Set(horarios)];
     }
-    init();
+
+    // --------------------------------------------------------------
+    // 9. Aba Explorar IA (chat simples)
+    // --------------------------------------------------------------
+    document.getElementById("iaPerguntarBtn").onclick = async () => {
+        const pergunta = document.getElementById("iaPergunta").value.trim();
+        if(!pergunta) return;
+        const respDiv = document.getElementById("iaResposta");
+        respDiv.innerHTML = "⏳ Consultando IA...";
+        const resposta = await callGemini(pergunta, "geral");
+        respDiv.innerHTML = resposta;
+    };
+
+    // --------------------------------------------------------------
+    // 10. Navegação por abas
+    // --------------------------------------------------------------
+    document.querySelectorAll(".tab").forEach(tab => {
+        tab.onclick = () => {
+            document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
+            document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
+            tab.classList.add("active");
+            document.getElementById(tab.dataset.tab).classList.add("active");
+        };
+    });
+
+    // --------------------------------------------------------------
+    // 11. Inicialização e PWA
+    // --------------------------------------------------------------
+    if("serviceWorker" in navigator) {
+        navigator.serviceWorker.register('/sw.js').catch(e=>console.log("SW não registrado", e));
+    }
+    if(Notification.permission !== "granted") Notification.requestPermission();
+
+    carregarDados();
 </script>
 </body>
 </html>
