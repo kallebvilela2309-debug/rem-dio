@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>Dose Inteligente - IA</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #F5F7FA;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        .container { max-width: 600px; margin: 0 auto; }
+        .header { text-align: center; padding: 20px 0 30px; }
+        .header h1 { font-size: 1.8rem; color: #2F80ED; }
+        .header p { color: #828282; }
+        .card {
+            background: white;
+            border-radius: 24px;
+            padding: 24px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            border: 1px solid #E0E0E0;
+        }
+        .card-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: #333;
+            border-left: 3px solid #2F80ED;
+            padding-left: 12px;
+        }
+        input, textarea {
+            width: 100%;
+            padding: 14px;
+            border-radius: 40px;
+            border: 1px solid #E0E0E0;
+            background: #F5F7FA;
+            font-size: 1rem;
+            margin-bottom: 16px;
+            font-family: inherit;
+        }
+        button {
+            width: 100%;
+            padding: 14px;
+            border-radius: 40px;
+            background: #2F80ED;
+            color: white;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+        button:active { transform: scale(0.97); }
+        .resposta {
+            background: #F5F7FA;
+            border-radius: 20px;
+            padding: 20px;
+            margin-top: 20px;
+            white-space: pre-wrap;
+            line-height: 1.5;
+            border-left: 3px solid #56CCF2;
+        }
+        .badge {
+            background: #56CCF2;
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 30px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: white;
+            margin-bottom: 12px;
+        }
+        .aviso {
+            text-align: center;
+            font-size: 0.75rem;
+            color: #828282;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>💊 Dose Inteligente</h1>
+            <p>Assistente com IA Gemini</p>
+        </div>
+        
+        <div class="card">
+            <div class="badge">🤖 IA Gemini</div>
+            <div class="card-title">Pergunte sobre medicamentos</div>
+            
+            <textarea id="pergunta" rows="3" placeholder="Ex: Posso tomar dipirona com ibuprofeno?"></textarea>
+            
+            <button id="btnPerguntar">Perguntar para IA</button>
+            
+            <div id="resposta" class="resposta">
+                ⚡ Aguardando sua pergunta
+            </div>
+        </div>
+        
+        <div class="aviso">
+            ⚠️ Informação gerada por IA. Sempre consulte um profissional de saúde.
+        </div>
+    </div>
+
+    <script>
+        const API_KEY = "AIzaSyDCW_n77x2X-kKDEBrMc4MTp6GIsA6XbsA";
+        
+        async function perguntarGemini(pergunta) {
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
+            
+            const corpo = {
+                contents: [{
+                    parts: [{ text: `Você é um assistente farmacêutico especialista. Responda de forma clara, segura e educativa em português: ${pergunta}` }]
+                }]
+            };
+            
+            const resposta = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(corpo)
+            });
+            
+            if (!resposta.ok) throw new Error(`HTTP ${resposta.status}`);
+            
+            const dados = await resposta.json();
+            return dados.candidates[0].content.parts[0].text;
+        }
+        
+        document.getElementById("btnPerguntar").onclick = async () => {
+            const pergunta = document.getElementById("pergunta").value.trim();
+            if (!pergunta) {
+                alert("Digite uma pergunta!");
+                return;
+            }
+            
+            const divResposta = document.getElementById("resposta");
+            divResposta.innerHTML = "⏳ Pensando... Aguarde alguns segundos...";
+            
+            try {
+                const resposta = await perguntarGemini(pergunta);
+                divResposta.innerHTML = resposta;
+            } catch (erro) {
+                divResposta.innerHTML = `❌ Erro: ${erro.message}`;
+            }
+        };
+        
+        document.getElementById("pergunta").addEventListener("keydown", (e) => {
+            if (e.ctrlKey && e.key === "Enter") {
+                document.getElementById("btnPerguntar").click();
+            }
+        });
+    </script>
+</body>
+</html>
