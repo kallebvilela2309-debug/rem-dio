@@ -79,6 +79,10 @@
             color: #828282;
             margin-top: 20px;
         }
+        .loading {
+            color: #828282;
+            font-style: italic;
+        }
     </style>
 </head>
 <body>
@@ -110,7 +114,8 @@
         const API_KEY = "AIzaSyDCW_n77x2X-kKDEBrMc4MTp6GIsA6XbsA";
         
         async function perguntarGemini(pergunta) {
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
+            // URL CORRIGIDA - usando o modelo gemini-pro
+            const url = `https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=${API_KEY}`;
             
             const corpo = {
                 contents: [{
@@ -118,16 +123,28 @@
                 }]
             };
             
+            console.log("Enviando requisição para:", url);
+            
             const resposta = await fetch(url, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(corpo)
             });
             
-            if (!resposta.ok) throw new Error(`HTTP ${resposta.status}`);
+            if (!resposta.ok) {
+                const erroTexto = await resposta.text();
+                console.error("Erro completo:", erroTexto);
+                throw new Error(`HTTP ${resposta.status}: ${erroTexto.substring(0, 100)}`);
+            }
             
             const dados = await resposta.json();
-            return dados.candidates[0].content.parts[0].text;
+            console.log("Resposta recebida:", dados);
+            
+            if (dados.candidates && dados.candidates[0] && dados.candidates[0].content) {
+                return dados.candidates[0].content.parts[0].text;
+            } else {
+                throw new Error("Resposta inesperada da API");
+            }
         }
         
         document.getElementById("btnPerguntar").onclick = async () => {
@@ -139,12 +156,16 @@
             
             const divResposta = document.getElementById("resposta");
             divResposta.innerHTML = "⏳ Pensando... Aguarde alguns segundos...";
+            divResposta.classList.add("loading");
             
             try {
                 const resposta = await perguntarGemini(pergunta);
                 divResposta.innerHTML = resposta;
+                divResposta.classList.remove("loading");
             } catch (erro) {
+                console.error("Erro capturado:", erro);
                 divResposta.innerHTML = `❌ Erro: ${erro.message}`;
+                divResposta.classList.remove("loading");
             }
         };
         
