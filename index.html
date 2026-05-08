@@ -114,8 +114,8 @@
         const API_KEY = "AIzaSyDCW_n77x2X-kKDEBrMc4MTp6GIsA6XbsA";
         
         async function perguntarGemini(pergunta) {
-            // URL CORRIGIDA - usando o modelo gemini-pro
-            const url = `https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=${API_KEY}`;
+            // URL CORRETA para gemini-1.5-flash
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
             
             const corpo = {
                 contents: [{
@@ -134,11 +134,11 @@
             if (!resposta.ok) {
                 const erroTexto = await resposta.text();
                 console.error("Erro completo:", erroTexto);
-                throw new Error(`HTTP ${resposta.status}: ${erroTexto.substring(0, 100)}`);
+                throw new Error(`HTTP ${resposta.status}: ${erroTexto.substring(0, 200)}`);
             }
             
             const dados = await resposta.json();
-            console.log("Resposta recebida:", dados);
+            console.log("Resposta recebida");
             
             if (dados.candidates && dados.candidates[0] && dados.candidates[0].content) {
                 return dados.candidates[0].content.parts[0].text;
