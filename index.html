@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>Dose Inteligente</title>
+    <title>Dose Inteligente - IA</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -121,16 +121,12 @@
 
 <script>
     // --------------------------------------------------------------
-    // 🔁 NOVA CHAVE API (fornecida por você)
+    // CONFIGURAÇÃO DA IA (MODELO CORRETO + CHAVE)
     // --------------------------------------------------------------
     const API_KEY = "AIzaSyCi4u5EMyfPk58ptSMc334o9L0L7AenRKU";
-    const MODELO = "gemini-1.5-flash";  // usar este, mais estável
+    const MODELO = "gemini-2.5-flash";  // ✅ seu modelo disponível!
 
-    // Função auxiliar para delay
-    function delay(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
-
-    // Função principal de chamada à IA com retry em caso de 429
-    async function callGemini(prompt, tipo = "geral", tentativa = 1) {
+    async function callGemini(prompt, tipo = "geral") {
         let fullPrompt = "";
         if (tipo === "interacoes") {
             fullPrompt = `Analise os seguintes medicamentos: ${prompt}. Responda apenas em português, de forma clara e curta, seguindo este formato:
@@ -144,46 +140,25 @@
         }
 
         try {
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODELO}:generateContent?key=${API_KEY}`;
-            const payload = { contents: [{ parts: [{ text: fullPrompt }] }] };
-            const response = await fetch(url, {
+            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODELO}:generateContent?key=${API_KEY}`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(payload)
+                body: JSON.stringify({ contents: [{ parts: [{ text: fullPrompt }] }] })
             });
-
-            if (response.status === 429) {
-                if (tentativa <= 3) {
-                    const espera = tentativa * 1000; // 1s, 2s, 3s
-                    console.warn(`HTTP 429, tentando novamente em ${espera}ms...`);
-                    await delay(espera);
-                    return callGemini(prompt, tipo, tentativa + 1);
-                } else {
-                    return "Limite de requisições excedido. Tente novamente em alguns segundos.";
-                }
-            }
-
             if (!response.ok) {
-                const erroTexto = await response.text();
-                console.error(`Erro HTTP ${response.status}:`, erroTexto);
-                return `Erro na comunicação (${response.status}). Tente novamente.`;
+                const erro = await response.text();
+                console.error("Erro HTTP:", erro);
+                return `Erro ${response.status}: ${erro.substring(0, 150)}`;
             }
-
             const data = await response.json();
-            const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-            if (!text) {
-                console.error("Resposta inesperada:", data);
-                return "A IA não retornou uma resposta válida.";
-            }
-            return text;
-        } catch (error) {
-            console.error("Erro na requisição:", error);
-            return "Erro de rede. Verifique sua conexão.";
+            return data.candidates?.[0]?.content?.parts?.[0]?.text || "Resposta vazia da IA.";
+        } catch (e) {
+            return `Erro de conexão: ${e.message}`;
         }
     }
 
     // --------------------------------------------------------------
-    // Dados e persistência (código já consolidado)
+    // Dados e persistência
     // --------------------------------------------------------------
     let medicamentos = [];
     let eventosPendentes = [];
@@ -211,7 +186,7 @@
         renderizarListaMedicamentos();
     }
 
-    // Alarmes
+    // Alarmes e notificações
     function tocarSom() {
         if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         try {
@@ -261,11 +236,8 @@
         document.getElementById("lerMaisAlarme").onclick = () => {
             alert(med.detalhesIA || "Consulte a bula do medicamento.");
         };
-        fetchArduino(med.nome, evento.horario);
-    }
-
-    function fetchArduino(medNome, horario) {
-        console.log(`[Arduino] POST /disparar-motor - ${medNome} ${horario}`);
+        // Sinal para Arduino (futuro)
+        console.log(`[Arduino] Disparar motor para ${med.nome} às ${evento.horario}`);
     }
 
     function notificarResponsavel(mensagem) {
@@ -401,6 +373,7 @@
         salvarDados();
     };
 
+    // Formulário dinâmico
     function adicionarFormMed() {
         const container = document.getElementById("medFormList");
         const div = document.createElement("div");
@@ -431,7 +404,7 @@
     document.getElementById("addMedButton").onclick = adicionarFormMed;
     adicionarFormMed();
 
-    // Análise com IA (com delays para evitar 429)
+    // Análise com IA
     document.getElementById("continueAnalysisButton").onclick = async () => {
         const forms = document.querySelectorAll("#medFormList .med-item");
         if (!forms.length) { alert("Adicione pelo menos um medicamento"); return; }
@@ -463,8 +436,7 @@
                         <p>${explicacao}</p>
                         ${temInteracao && solucao ? `<p><strong>Solução:</strong> ${solucao}</p>` : ""}
                     </div>`;
-        for (let i = 0; i < medicamentosTemp.length; i++) {
-            const med = medicamentosTemp[i];
+        for (let med of medicamentosTemp) {
             const infoIA = await callGemini(`Medicamento: ${med.nome}. Responda em português: para que serve, como tomar, principais cuidados, efeitos colaterais comuns. Seja breve.`, "geral");
             const faltando = [];
             if (!med.dosagem) faltando.push("dose");
@@ -481,7 +453,6 @@
                         <div class="read-more" data-med="${med.nome}">📖 Ler mais</div>
                         <div class="detailed-info" id="detalhes-${med.nome.replace(/ /g, '')}"></div>
                     </div>`;
-            await delay(1200); // delay de 1.2s entre cada chamada para não estourar limite
         }
         analysisContent.innerHTML = html;
         document.querySelectorAll(".read-more").forEach(el => {
@@ -532,6 +503,7 @@
         respDiv.innerHTML = resposta;
     };
 
+    // Navegação abas
     document.querySelectorAll(".tab").forEach(tab => {
         tab.onclick = () => {
             document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
