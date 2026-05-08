@@ -32,16 +32,16 @@
             border-left: 3px solid #2F80ED;
             padding-left: 12px;
         }
-        input, textarea {
+        textarea {
             width: 100%;
             padding: 14px;
-            border-radius: 40px;
+            border-radius: 20px;
             border: 1px solid #E0E0E0;
             background: #F5F7FA;
             font-size: 1rem;
             margin-bottom: 16px;
             font-family: inherit;
-            box-sizing: border-box;
+            resize: vertical;
         }
         button {
             width: 100%;
@@ -84,11 +84,6 @@
             color: #828282;
             font-style: italic;
         }
-        .erro-detalhado {
-            font-size: 0.8rem;
-            color: #EB5757;
-            margin-top: 10px;
-        }
     </style>
 </head>
 <body>
@@ -99,7 +94,7 @@
         </div>
         
         <div class="card">
-            <div class="badge">🤖 IA Gemini 2.5 Flash</div>
+            <div class="badge">🤖 Gemini 2.5 Flash</div>
             <div class="card-title">Pergunte sobre medicamentos</div>
             
             <textarea id="pergunta" rows="3" placeholder="Ex: Posso tomar dipirona com ibuprofeno?"></textarea>
@@ -117,29 +112,20 @@
     </div>
 
     <script>
-        const API_KEY = "AIzaSyDCW_n77x2X-kKDEBrMc4MTp6GIsA6XbsA";
+        // ✅ NOVA CHAVE API (gerada no Google AI Studio)
+        const API_KEY = "AIzaSyCWv7SMEQfKXUzNLdAwu5YWZ9I3dpYZe8U";
         
-        // Lista de modelos para tentar (fallback automático)
-        const MODELOS = [
-            "gemini-2.5-flash-preview",
-            "gemini-1.5-flash",
-            "gemini-1.5-pro",
-            "gemini-2.0-flash-lite"
-        ];
+        // Modelo estável em 2026
+        const MODELO = "gemini-2.5-flash";
         
-        async function perguntarGemini(pergunta, modeloIndex = 0) {
-            if (modeloIndex >= MODELOS.length) {
-                throw new Error("Nenhum modelo disponível. Verifique sua chave API no Google AI Studio.");
-            }
-            
-            const modelo = MODELOS[modeloIndex];
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent?key=${API_KEY}`;
-            
-            console.log(`Tentando modelo: ${modelo}`);
+        async function perguntarGemini(pergunta) {
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODELO}:generateContent?key=${API_KEY}`;
             
             const corpo = {
                 contents: [{
-                    parts: [{ text: `Você é um assistente farmacêutico especialista. Responda de forma clara, segura e educativa em português: ${pergunta}` }]
+                    parts: [{ 
+                        text: `Você é um assistente farmacêutico especialista. Responda de forma clara, segura e educativa em português do Brasil: ${pergunta}` 
+                    }]
                 }]
             };
             
@@ -151,10 +137,7 @@
             
             if (!resposta.ok) {
                 const erroTexto = await resposta.text();
-                console.error(`Erro no modelo ${modelo}:`, erroTexto);
-                
-                // Tenta o próximo modelo
-                return perguntarGemini(pergunta, modeloIndex + 1);
+                throw new Error(`HTTP ${resposta.status}`);
             }
             
             const dados = await resposta.json();
@@ -174,7 +157,7 @@
             }
             
             const divResposta = document.getElementById("resposta");
-            divResposta.innerHTML = "⏳ Pensando... Aguarde alguns segundos...";
+            divResposta.innerHTML = "⏳ Pensando...";
             divResposta.classList.add("loading");
             
             try {
@@ -182,13 +165,7 @@
                 divResposta.innerHTML = resposta;
                 divResposta.classList.remove("loading");
             } catch (erro) {
-                console.error("Erro capturado:", erro);
-                divResposta.innerHTML = `❌ Erro: ${erro.message}<br><br>
-                <span class="erro-detalhado">🔧 Possíveis soluções:<br>
-                1. Sua chave API pode ser de uma região sem acesso ao Gemini<br>
-                2. Gere uma NOVA chave em: <a href="https://aistudio.google.com/apikey" target="_blank">Google AI Studio</a><br>
-                3. Verifique se seu projeto Google Cloud tem faturamento ativo (gratuito mesmo assim)<br>
-                4. Ou aguarde alguns minutos e tente novamente</span>`;
+                divResposta.innerHTML = `❌ Erro: ${erro.message}`;
                 divResposta.classList.remove("loading");
             }
         };
