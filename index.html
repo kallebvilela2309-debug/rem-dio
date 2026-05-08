@@ -40,12 +40,13 @@
         .med-analysis-card { background: white; border-radius: 28px; padding: 16px; margin-bottom: 16px; }
         .suggested-badge { background: #FFE9D6; color: #ED6A2E; font-size: 0.7rem; padding: 4px 8px; border-radius: 50px; display: inline-block; margin: 8px 0; }
         .read-more { color: #2F80ED; font-weight: 600; margin-top: 12px; cursor: pointer; display: inline-block; }
-        .detailed-info { display: none; margin-top: 12px; padding-top: 12px; border-top: 1px solid #E0E0E0; }
+        .detailed-info { display: none; margin-top: 12px; padding-top: 12px; border-top: 1px solid #E0E0E0; font-size: 0.9rem; line-height: 1.4; }
+        .resumo-curto { font-size: 0.9rem; line-height: 1.4; color: #333; margin: 8px 0; }
         .alarm-modal { position: fixed; bottom: 0; left: 0; right: 0; background: white; border-radius: 32px 32px 0 0; padding: 24px 20px 32px; z-index: 2000; box-shadow: 0 -4px 20px rgba(0,0,0,0.1); transform: translateY(100%); transition: 0.3s; }
         .alarm-modal.show { transform: translateY(0); }
         .alarm-modal h2 { font-size: 1.8rem; }
         .btn-grande { background: #2F80ED; font-size: 1.3rem; padding: 16px; margin: 16px 0; }
-        .btn-pequeno { background: #A0AAB5; }
+        .btn-nao-tomar { background: #A0AAB5; }
         @media (max-width: 500px) { .form-grid { grid-template-columns: 1fr; } }
     </style>
 </head>
@@ -121,10 +122,10 @@
 
 <script>
     // --------------------------------------------------------------
-    // CONFIGURAÇÃO DA IA (MODELO CORRETO + CHAVE)
+    // ✅ NOVA CHAVE API (fornecida por você)
     // --------------------------------------------------------------
-    const API_KEY = "AIzaSyCi4u5EMyfPk58ptSMc334o9L0L7AenRKU";
-    const MODELO = "gemini-2.5-flash";  // ✅ seu modelo disponível!
+    const API_KEY = "AIzaSyCMWDe2qO8RVGvV7oj5aFjdyyNAnScMD2A";
+    const MODELO = "gemini-2.5-flash";
 
     async function callGemini(prompt, tipo = "geral") {
         let fullPrompt = "";
@@ -132,7 +133,11 @@
             fullPrompt = `Analise os seguintes medicamentos: ${prompt}. Responda apenas em português, de forma clara e curta, seguindo este formato:
 - Interação perigosa? (sim/não)
 - Explicação (máximo 2 linhas)
-- Sugestão (se houver, indique intervalo de horas)`;
+- Solução (se houver, indique intervalo de horas)`;
+        } else if (tipo === "resumo") {
+            fullPrompt = `Para o medicamento "${prompt}", responda APENAS com 2 linhas curtas em português: (1) para que serve, (2) como tomar (com água/leite/jejum). Nada mais.`;
+        } else if (tipo === "detalhes") {
+            fullPrompt = `Para o medicamento "${prompt}", forneça informações detalhadas em português: composição, interações medicamentosas, contraindicações completas e efeitos colaterais.`;
         } else if (tipo === "sugestao") {
             fullPrompt = `Para o medicamento "${prompt.nome}", o usuário não informou: ${prompt.faltando}. Sugira valores razoáveis para dose, frequência e horários. Responda em texto corrido, sem JSON.`;
         } else {
@@ -151,9 +156,10 @@
                 return `Erro ${response.status}: ${erro.substring(0, 150)}`;
             }
             const data = await response.json();
-            return data.candidates?.[0]?.content?.parts?.[0]?.text || "Resposta vazia da IA.";
+            return data.candidates?.[0]?.content?.parts?.[0]?.text || "Não foi possível obter resposta.";
         } catch (e) {
-            return `Erro de conexão: ${e.message}`;
+            console.error("Erro na requisição:", e);
+            return "Erro de conexão. Verifique sua internet.";
         }
     }
 
@@ -206,38 +212,66 @@
     function mostrarAlarme(evento) {
         const med = medicamentos.find(m => m.id === evento.medicamentoId);
         if (!med) return;
+        
         const modal = document.createElement("div");
         modal.className = "alarm-modal";
         modal.innerHTML = `
             <h2>💊 ${med.nome}</h2>
             <p style="font-size:1.2rem;">Horário: ${evento.horario}</p>
-            <p style="margin:8px 0;">${med.instrucaoCurta || "Tome conforme orientação médica."}</p>
+            <p style="margin:8px 0;">${med.resumoCurto || "Tome conforme orientação médica."}</p>
             <button class="btn-grande" id="tomarAgoraBtn">✅ TOMAR AGORA</button>
-            <button id="adiarBtn" class="btn-pequeno">⏰ Adiar (10 min)</button>
+            <button id="naoTomarBtn" class="btn-nao-tomar">❌ Não tomar</button>
             <button id="lerMaisAlarme" class="btn-outline" style="margin-top:12px;">📖 Ler mais</button>
         `;
         document.body.appendChild(modal);
         setTimeout(() => modal.classList.add("show"), 10);
+        
         const fechar = () => {
             modal.classList.remove("show");
             setTimeout(() => modal.remove(), 300);
         };
+        
         document.getElementById("tomarAgoraBtn").onclick = () => {
             marcarTomado(evento.id);
             if (confirm("Notificar responsável?")) notificarResponsavel(`${med.nome} tomado às ${evento.horario}`);
             fechar();
         };
-        document.getElementById("adiarBtn").onclick = () => {
-            const novaData = new Date(Date.now() + 10 * 60000);
-            evento.dataReferencia = novaData.toISOString();
-            salvarDados();
+        
+        document.getElementById("naoTomarBtn").onclick = () => {
+            registrarIgnorado(evento.id);
             fechar();
         };
-        document.getElementById("lerMaisAlarme").onclick = () => {
-            alert(med.detalhesIA || "Consulte a bula do medicamento.");
+        
+        document.getElementById("lerMaisAlarme").onclick = async () => {
+            if (!med.detalhesIA) {
+                const detalhes = await callGemini(med.nome, "detalhes");
+                med.detalhesIA = detalhes;
+                salvarDados();
+            }
+            alert(med.detalhesIA || "Informações não disponíveis. Consulte a bula.");
         };
-        // Sinal para Arduino (futuro)
-        console.log(`[Arduino] Disparar motor para ${med.nome} às ${evento.horario}`);
+        
+        // Integração futura com Arduino
+        fetchArduino(med.nome, evento.horario);
+    }
+    
+    function fetchArduino(medNome, horario) {
+        // Endpoint futuro do Arduino (mesma rede ou servidor)
+        const ARDUINO_IP = localStorage.getItem("arduino_ip") || "";
+        if (ARDUINO_IP) {
+            fetch(`http://${ARDUINO_IP}/disparar`)
+                .catch(e => console.log("Arduino não encontrado"));
+        }
+        console.log(`[Arduino] Disparar motor para ${medNome} às ${horario}`);
+    }
+    
+    function registrarIgnorado(eventoId) {
+        const evento = eventosPendentes.find(e => e.id === eventoId);
+        if (evento && !evento.tomado) {
+            evento.tomado = true;
+            historico.push({ medicamentoId: evento.medicamentoId, horario: evento.horario, status: "ignorado", timestamp: Date.now() });
+            salvarDados();
+        }
     }
 
     function notificarResponsavel(mensagem) {
@@ -334,7 +368,7 @@
         const tomados = historico.filter(h => h.status === "tomado").length;
         const taxa = total ? Math.round(tomados / total * 100) : 0;
         const tomadosHoje = historico.filter(h => h.status === "tomado" && new Date(h.timestamp).toDateString() === hoje).length;
-        const ignoradosHoje = historico.filter(h => h.status === "pulado" && new Date(h.timestamp).toDateString() === hoje).length;
+        const ignoradosHoje = historico.filter(h => h.status === "ignorado" && new Date(h.timestamp).toDateString() === hoje).length;
         document.getElementById("totalEventos").innerText = total;
         document.getElementById("taxaAcertos").innerText = `${taxa}%`;
         document.getElementById("tomadosHoje").innerText = tomadosHoje;
@@ -404,7 +438,7 @@
     document.getElementById("addMedButton").onclick = adicionarFormMed;
     adicionarFormMed();
 
-    // Análise com IA
+    // Análise com IA (organizada: resumo curto + detalhes no "Ler mais")
     document.getElementById("continueAnalysisButton").onclick = async () => {
         const forms = document.querySelectorAll("#medFormList .med-item");
         if (!forms.length) { alert("Adicione pelo menos um medicamento"); return; }
@@ -425,19 +459,23 @@
         analysisScreen.classList.add("active");
         analysisContent.innerHTML = "<div style='text-align:center'>⏳ IA analisando medicamentos...</div>";
 
+        // Verificar interações
         const nomes = medicamentosTemp.map(m => m.nome).join(", ");
         const interacaoResposta = await callGemini(nomes, "interacoes");
         let temInteracao = interacaoResposta.toLowerCase().includes("sim") || interacaoResposta.toLowerCase().includes("perigosa");
         let explicacao = interacaoResposta.substring(0, 200);
-        let solucao = interacaoResposta.includes("Sugestão") ? interacaoResposta.split("Sugestão")[1] : "";
+        let solucao = interacaoResposta.includes("Solução") ? interacaoResposta.split("Solução")[1] : "";
 
         let html = `<div class="${temInteracao ? 'interaction-alert' : 'interaction-alert interaction-safe'}">
                         ${temInteracao ? "⚠️ Atenção: Esses medicamentos possuem interação" : "✅ Nenhuma interação perigosa encontrada"}
                         <p>${explicacao}</p>
                         ${temInteracao && solucao ? `<p><strong>Solução:</strong> ${solucao}</p>` : ""}
                     </div>`;
+        
         for (let med of medicamentosTemp) {
-            const infoIA = await callGemini(`Medicamento: ${med.nome}. Responda em português: para que serve, como tomar, principais cuidados, efeitos colaterais comuns. Seja breve.`, "geral");
+            // Buscar resumo curto (2 linhas)
+            const resumoCurto = await callGemini(med.nome, "resumo");
+            // Buscar sugestões se faltar informações
             const faltando = [];
             if (!med.dosagem) faltando.push("dose");
             if (!med.horarios || med.horarios.length === 0) faltando.push("horários");
@@ -446,27 +484,38 @@
                 const sugestaoIA = await callGemini({ nome: med.nome, faltando: faltando.join(", ") }, "sugestao");
                 sugestaoHtml = `<div class="suggested-badge">🔵 O sistema sugere: ${sugestaoIA}</div>`;
             }
+            
             html += `<div class="med-analysis-card">
                         <strong style="font-size:1.2rem;">💊 ${med.nome}</strong> ${med.dosagem ? `(${med.dosagem})` : ''}
                         ${sugestaoHtml}
-                        <div class="resumo-simples">${infoIA.substring(0, 200)}...</div>
-                        <div class="read-more" data-med="${med.nome}">📖 Ler mais</div>
+                        <div class="resumo-curto">📌 ${resumoCurto}</div>
+                        <div class="read-more" data-med="${med.nome}" data-detalhes="">📖 Ler mais</div>
                         <div class="detailed-info" id="detalhes-${med.nome.replace(/ /g, '')}"></div>
                     </div>`;
         }
         analysisContent.innerHTML = html;
+        
+        // Configurar "Ler mais" para carregar detalhes sob demanda
         document.querySelectorAll(".read-more").forEach(el => {
             el.onclick = async () => {
                 const nome = el.dataset.med;
                 const detalhesDiv = document.getElementById(`detalhes-${nome.replace(/ /g, '')}`);
-                if (detalhesDiv.innerHTML) { detalhesDiv.style.display = detalhesDiv.style.display === 'none' ? 'block' : 'none'; return; }
-                detalhesDiv.innerHTML = "⏳ Carregando...";
-                const resposta = await callGemini(`Forneça informações detalhadas sobre o medicamento ${nome}: composição, interações, contraindicações completas.`, "geral");
-                detalhesDiv.innerHTML = resposta;
+                if (detalhesDiv.innerHTML && detalhesDiv.style.display === 'block') {
+                    detalhesDiv.style.display = 'none';
+                    return;
+                }
+                if (detalhesDiv.innerHTML) {
+                    detalhesDiv.style.display = 'block';
+                    return;
+                }
+                detalhesDiv.innerHTML = "⏳ Carregando informações detalhadas...";
+                const detalhes = await callGemini(nome, "detalhes");
+                detalhesDiv.innerHTML = detalhes;
                 detalhesDiv.style.display = 'block';
             };
         });
     };
+    
     document.getElementById("closeAnalysisBtn").onclick = () => document.getElementById("analysisScreen").classList.remove("active");
     document.getElementById("reviseCadastroBtn").onclick = () => document.getElementById("analysisScreen").classList.remove("active");
     document.getElementById("confirmTreatmentBtn").onclick = () => {
@@ -481,7 +530,7 @@
             const dias = Array.from(form.querySelectorAll(".weekday-btn.active")).map(btn => parseInt(btn.dataset.day));
             const novoMed = {
                 id: nextId++, nome, dosagem, horarios: horarios.length ? horarios : ["08:00"], diasAtivos: dias.length ? dias : [0,1,2,3,4,5,6],
-                instrucaoCurta: "Siga orientação médica", detalhesIA: ""
+                resumoCurto: "Tome conforme orientação médica.", detalhesIA: ""
             };
             medicamentos.push(novoMed);
             gerarEventos(novoMed);
