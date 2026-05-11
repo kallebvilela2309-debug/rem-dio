@@ -131,11 +131,11 @@
 </div>
 
 <script>
-  // ==============================================================
-// 🤖 CONFIGURAÇÃO DA IA GEMINI
-// ==============================================================
-const API_KEY = "AIzaSyD9_xBvb4vNpn8kIAp65adfnMpCccisEZ8";
-const MODELO = "gemini-2.5-flash";
+    // ==============================================================
+    // 🤖 CONFIGURAÇÃO DA IA GEMINI (NOVA CHAVE)
+    // ==============================================================
+    const API_KEY = "AIzaSyD9_xBvb4vNpn8kIAp65adfnMpCccisEZ8";
+    const MODELO = "gemini-2.5-flash";
     
     function delay(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
     
@@ -143,9 +143,7 @@ const MODELO = "gemini-2.5-flash";
         const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODELO}:generateContent?key=${API_KEY}`;
         const corpo = {
             contents: [{
-                parts: [{
-                    text: `${prompt}`
-                }]
+                parts: [{ text: prompt }]
             }]
         };
         
