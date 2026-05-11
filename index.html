@@ -109,14 +109,13 @@
 
 <script>
     // --------------------------------------------------------------
-    // 1. CONFIGURAÇÃO DA IA GEMINI
+    // 1. CONFIGURAÇÃO DA IA GEMINI (MODELO LEVE - ALTO VOLUME)
     // --------------------------------------------------------------
     const API_KEY = "AIzaSyDGBGbL9goex5cNukWKNM2iMXwRdO4cPCo";
-    const MODELO = "gemini-2.5-flash";
+    const MODELO = "gemini-2.5-flash-lite";  // ✅ MODELO LEVE - MAIS REQUISIÇÕES GRÁTIS
 
     function formatarTextoIA(texto) {
         if (!texto) return "";
-        // Converte quebras de linha em <br> e mantém lista com '- '
         let html = texto.replace(/\n/g, '<br>');
         html = html.replace(/^- (.*)/gm, '• $1<br>');
         html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
@@ -271,7 +270,6 @@ Use apenas informações factuais e seguras. Responda em português.`;
     function mostrarAlarme(evento) {
         const med = medicamentos.find(m => m.id === evento.medicamentoId);
         if (!med) return;
-        // Busca detalhes se não tiver
         if (!med.detalhesIA) {
             callGemini(med.nome, "detalhesOrganizado").then(det => {
                 med.detalhesIA = det;
