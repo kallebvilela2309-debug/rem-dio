@@ -132,18 +132,44 @@
 
 <script>
     // ==============================================================
-    // 🤖 CONFIGURAÇÃO DA IA GEMINI + FALLBACK LOCAL
+    // 📚 BANCO DE DADOS LOCAL COMPLETO (FUNCIONA SEM IA)
     // ==============================================================
-    const API_KEY = "AIzaSyAimm6RWLV8I29U6q5od1VPllqXyn-7DbM";
-    const MODELO = "gemini-2.5-flash";
-    
-    // Banco de dados local para fallback
     const infoLocal = {
-        "dipirona": { indicacao: "Dor e febre", contraindicacao: "Alergia a dipirona, problemas na medula", recomendacoes: "Tomar com água, máximo 4g/dia", efeitos: "Reações alérgicas raras" },
-        "ibuprofeno": { indicacao: "Inflamação, dor muscular, febre", contraindicacao: "Úlcera, insuficiência renal", recomendacoes: "Tomar com alimentos, máximo 1200mg/dia", efeitos: "Azia, náusea" },
-        "paracetamol": { indicacao: "Febre, dores leves", contraindicacao: "Doença hepática grave", recomendacoes: "Máximo 4g/dia, evitar álcool", efeitos: "Hepatotoxicidade em overdose" },
-        "amoxicilina": { indicacao: "Infecções bacterianas", contraindicacao: "Alergia a penicilinas", recomendacoes: "Completar o tratamento", efeitos: "Diarreia, candidíase" },
-        "omeprazol": { indicacao: "Azia, refluxo", contraindicacao: "Hipersensibilidade", recomendacoes: "Tomar em jejum pela manhã", efeitos: "Dor de cabeça, diarreia" }
+        "dipirona": { 
+            indicacao: "Dor e febre (cólica, dor de cabeça, pós-operatório)",
+            contraindicacao: "Alergia a dipirona, problemas na medula óssea, gravidez (3º trimestre)",
+            recomendacoes: "Tomar com um copo de água (200ml). Pode ser com alimentos para evitar irritação gástrica.",
+            efeitos: "Reações alérgicas raras, agranulocitose (muito raro)",
+            detalhes: "🔬 **Composição:** Metamizol sódico 500mg\n\n⚠️ **Interações:** Álcool aumenta risco de hepatotoxicidade. Cuidado com anticoagulantes.\n\n💊 **Dose:** Adultos: 500mg a 1g, até 4g/dia.\n\n📦 **Armazenamento:** Em local seco e arejado.\n\n🚨 **Superdosagem:** Procure atendimento médico imediatamente."
+        },
+        "ibuprofeno": { 
+            indicacao: "Inflamação, dor muscular, febre, artrite",
+            contraindicacao: "Úlcera ativa, insuficiência renal, alergia a AINEs",
+            recomendacoes: "Tomar com alimentos ou leite para evitar irritação estomacal.",
+            efeitos: "Azia, náusea, sangramento gástrico (uso prolongado)",
+            detalhes: "🔬 **Composição:** Ibuprofeno 200mg/400mg\n\n⚠️ **Interações:** AAS (risco de hemorragia). Diuréticos (reduz efeito). Lítio (aumenta toxicidade).\n\n💊 **Dose:** 200-400mg por dose, máximo 1200mg/dia sem receita.\n\n📦 **Armazenamento:** Em local seco e arejado.\n\n🚨 **Superdosagem:** Procure atendimento médico imediatamente."
+        },
+        "paracetamol": { 
+            indicacao: "Febre, dores leves a moderadas (dor de cabeça, dor de dente, dor muscular)",
+            contraindicacao: "Doença hepática grave, alergia",
+            recomendacoes: "Engolir com água. Evitar suco de toranja. Pode ser com ou sem alimentos.",
+            efeitos: "Raro, hepatotoxicidade em overdose",
+            detalhes: "🔬 **Composição:** Paracetamol 500mg/750mg\n\n⚠️ **Interações:** Álcool (risco de lesão hepática). Warfarina (aumenta efeito anticoagulante).\n\n💊 **Dose:** 500-750mg por dose, máximo 4000mg/dia.\n\n📦 **Armazenamento:** Em local seco.\n\n🚨 **Superdosagem:** Risco de falência hepática. Procure atendimento urgente."
+        },
+        "amoxicilina": { 
+            indicacao: "Infecções bacterianas (amigdalite, sinusite, pneumonia, otite)",
+            contraindicacao: "Alergia a penicilinas, mononucleose infecciosa",
+            recomendacoes: "Tomar com um copo de água. Pode ser com alimentos se causar enjoo.",
+            efeitos: "Diarreia, candidíase, rash cutâneo",
+            detalhes: "🔬 **Composição:** Amoxicilina 500mg\n\n⚠️ **Interações:** Alopurinol (aumenta risco de rash). Anticoagulantes orais (aumenta efeito).\n\n💊 **Dose:** 500mg 8/8h ou 875mg 12/12h.\n\n📦 **Armazenamento:** Em local seco.\n\n🚨 **Superdosagem:** Procure atendimento médico."
+        },
+        "omeprazol": { 
+            indicacao: "Azia, refluxo gastroesofágico, úlcera duodenal",
+            contraindicacao: "Hipersensibilidade, uso com nelfinavir",
+            recomendacoes: "Pela manhã, em jejum, 30-60 minutos antes do café da manhã. Com água.",
+            efeitos: "Dor de cabeça, diarreia, deficiência de B12 a longo prazo",
+            detalhes: "🔬 **Composição:** Omeprazol 20mg\n\n⚠️ **Interações:** Clopidogrel (reduz eficácia). Cetoconazol (reduz absorção). Digoxina (aumenta toxicidade).\n\n💊 **Dose:** 20mg uma vez ao dia.\n\n📦 **Armazenamento:** Em local seco.\n\n🚨 **Superdosagem:** Efeitos colaterais intensificados. Procure atendimento."
+        }
     };
     
     function getInfoLocal(nome) {
@@ -156,14 +182,26 @@
         return null;
     }
     
+    function getDetalhesLocal(nome) {
+        const info = getInfoLocal(nome);
+        if (info && info.detalhes) return info.detalhes;
+        return "🔬 **Informações detalhadas:** Consulte a bula do medicamento para orientações completas sobre composição, interações, doses e contraindicações.";
+    }
+    
+    // ==============================================================
+    // 🤖 IA GEMINI (FALLBACK PARA O BANCO LOCAL)
+    // ==============================================================
+    const API_KEY = "AIzaSyAimm6RWLV8I29U6q5od1VPllqXyn-7DbM";
+    const MODELO = "gemini-2.5-flash";
+    
     async function callGemini(prompt, tipo = "geral") {
         let fullPrompt = "";
         if (tipo === "interacoes") {
             fullPrompt = `Analise os seguintes medicamentos: ${prompt}. Responda em JSON: {"temInteracao": true/false, "explicacao": "texto curto", "solucao": "sugestão"}`;
         } else if (tipo === "resumo") {
-            fullPrompt = `Para o medicamento "${prompt}", responda em JSON: {"nome":"${prompt}","indicacao":"...","contraindicacao":"...","recomendacoes":"...","efeitos":"..."}`;
+            fullPrompt = `Para o medicamento "${prompt}", responda em JSON: {"indicacao":"...","contraindicacao":"...","recomendacoes":"...","efeitos":"..."}`;
         } else if (tipo === "detalhes") {
-            fullPrompt = `Para o medicamento "${prompt}", forneça informações detalhadas em texto corrido: mecanismo de ação, interações, doses.`;
+            fullPrompt = `Para o medicamento "${prompt}", forneça informações detalhadas: composição, interações, doses, armazenamento, superdosagem.`;
         } else {
             fullPrompt = `Responda em português: ${prompt}`;
         }
@@ -181,7 +219,6 @@
     }
     
     async function obterResumoMedicamento(nome) {
-        // Primeiro tenta buscar local
         const local = getInfoLocal(nome);
         if (local) {
             return {
@@ -191,22 +228,24 @@
                 efeitos: local.efeitos
             };
         }
-        
-        // Se não tem local, tenta IA
         const resposta = await callGemini(nome, "resumo");
         if (resposta) {
-            try {
-                return JSON.parse(resposta);
-            } catch(e) {}
+            try { return JSON.parse(resposta); } catch(e) {}
         }
-        
-        // Fallback genérico
         return {
             indicacao: "Consulte a bula do medicamento",
             contraindicacao: "Consulte a bula do medicamento",
             recomendacoes: "Siga orientação médica",
             efeitos: "Consulte a bula do medicamento"
         };
+    }
+    
+    async function obterDetalhesMedicamento(nome) {
+        const local = getDetalhesLocal(nome);
+        if (local !== "🔬 **Informações detalhadas:** Consulte a bula...") return local;
+        const resposta = await callGemini(nome, "detalhes");
+        if (resposta) return resposta;
+        return "🔬 **Informações detalhadas:** Consulte a bula do medicamento para orientações completas sobre composição, interações, doses e contraindicações.";
     }
     
     function formatarTexto(texto) { return texto ? texto.replace(/\n/g, '<br>') : ""; }
@@ -354,8 +393,7 @@
         document.getElementById("lerMaisAlarme").onclick = async () => {
             let detalhes = med.detalhes;
             if (!detalhes) {
-                const resposta = await callGemini(med.nome, "detalhes");
-                detalhes = resposta || "Informações detalhadas não disponíveis. Consulte a bula.";
+                detalhes = await obterDetalhesMedicamento(med.nome);
                 med.detalhes = detalhes;
                 salvarDados();
             }
@@ -533,14 +571,16 @@
         analysisScreen.classList.add("active");
         analysisContent.innerHTML = "⏳ Analisando medicamentos...";
         
-        // Analisar interações (simplificado com fallback)
+        // Analisar interações
         const nomes = medicamentosTemp.map(m => m.nome).join(", ");
         let interacaoResposta = await callGemini(nomes, "interacoes");
         let interacao = { temInteracao: false, explicacao: "", solucao: "" };
         if (interacaoResposta) {
             try { interacao = JSON.parse(interacaoResposta); } catch(e) {}
-        } else if (medicamentosTemp.length >= 2) {
-            // Fallback simples para interação comum
+        }
+        
+        // Fallback local para interação comum
+        if (medicamentosTemp.length >= 2 && !interacao.temInteracao) {
             const temIbu = medicamentosTemp.some(m => m.nome.toLowerCase().includes("ibuprofeno"));
             const temDip = medicamentosTemp.some(m => m.nome.toLowerCase().includes("dipirona"));
             if (temIbu && temDip) {
@@ -574,10 +614,12 @@
             el.onclick = async () => {
                 const nome = el.dataset.nome;
                 const detalhesDiv = document.getElementById(`detalhes-${nome.replace(/ /g,'')}`);
-                if (detalhesDiv.innerHTML) { detalhesDiv.style.display = detalhesDiv.style.display === 'none' ? 'block' : 'none'; return; }
-                detalhesDiv.innerHTML = "⏳ Carregando...";
-                let detalhes = await callGemini(nome, "detalhes");
-                if (!detalhes) detalhes = "Informações detalhadas não disponíveis. Consulte a bula.";
+                if (detalhesDiv.innerHTML) { 
+                    detalhesDiv.style.display = detalhesDiv.style.display === 'none' ? 'block' : 'none'; 
+                    return; 
+                }
+                detalhesDiv.innerHTML = "⏳ Carregando informações detalhadas...";
+                const detalhes = await obterDetalhesMedicamento(nome);
                 detalhesDiv.innerHTML = formatarTexto(detalhes);
                 detalhesDiv.style.display = 'block';
             };
@@ -591,7 +633,7 @@
             const novoMed = {
                 id: nextId++, nome: med.nome, dosagem: med.dosagem,
                 horarios: med.horarios, diasAtivos: med.diasAtivos, comando: med.comando,
-                resumo: `📌 ${resumo.indicacao || "Consulte médico"} | 🚫 ${resumo.contraindicacao || "Consulte médico"} | 💊 ${resumo.recomendacoes || "Siga orientação"}`,
+                resumo: `📌 ${resumo.indicacao} | 🚫 ${resumo.contraindicacao} | 💊 ${resumo.recomendacoes}`,
                 detalhes: ""
             };
             medicamentos.push(novoMed);
@@ -618,7 +660,7 @@
     });
     if (Notification.permission !== "granted") Notification.requestPermission();
     carregarDados();
-    console.log("✅ Dose Inteligente iniciado!");
+    console.log("✅ Dose Inteligente iniciado com banco local completo!");
 </script>
 </body>
 </html>
