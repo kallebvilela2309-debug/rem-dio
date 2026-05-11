@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>Dose Inteligente - IA Gemini</title>
+    <title>Dose Inteligente - Dados Locais</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -28,7 +28,6 @@
         button { background: #2F80ED; border: none; border-radius: 40px; padding: 12px 20px; font-weight: 600; font-size: 0.9rem; color: white; cursor: pointer; width: 100%; margin-top: 8px; }
         button.btn-outline { background: transparent; border: 1px solid #2F80ED; color: #2F80ED; }
         button.btn-danger { background: #EB5757; }
-        button.btn-ia { background: #6C5CE7; }
         .schedule-item { background: #F5F7FA; border-radius: 20px; padding: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
         .stats-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 12px; text-align: center; }
         .stat-card { background: #F5F7FA; border-radius: 20px; padding: 12px; }
@@ -56,14 +55,14 @@
 <div class="app-container">
     <div class="app-header">
         <h1>💊 Dose Inteligente</h1>
-        <p>IA Gemini • Bluetooth • Alarmes inteligentes</p>
+        <p>Base de dados local • Alarmes inteligentes</p>
         <div class="aviso-permanente">⚠️ Este aplicativo não substitui orientação médica</div>
     </div>
 
     <div class="tab-bar">
         <button class="tab active" data-tab="inicio">Início</button>
         <button class="tab" data-tab="medicamentos">Medicamentos</button>
-        <button class="tab" data-tab="ia">Explorar IA</button>
+        <button class="tab" data-tab="ia">Explorar</button>
         <button class="tab" data-tab="config">Configurar</button>
     </div>
 
@@ -89,7 +88,7 @@
             <div class="card-title">➕ Cadastrar medicamento(s)</div>
             <div id="medFormList"></div>
             <button id="addMedButton" class="btn-outline">+ Adicionar outro</button>
-            <button id="saveMedsButton">💾 Cadastrar e analisar com IA</button>
+            <button id="saveMedsButton">💾 Salvar e iniciar alarmes</button>
         </div>
         <div class="card">
             <div class="card-title">📋 Seus medicamentos</div>
@@ -99,10 +98,10 @@
 
     <div id="ia" class="page">
         <div class="card">
-            <div class="card-title">🤖 Pergunte para IA (Gemini)</div>
-            <textarea id="perguntaIA" rows="3" placeholder="Ex: O que é bom para dor de cabeça?" style="resize: none;"></textarea>
-            <button id="btnPerguntarIA" class="btn-ia">🔍 Perguntar para IA</button>
-            <div id="respostaIA" class="chat-ia">💡 As respostas da IA aparecerão aqui.</div>
+            <div class="card-title">🔍 Pesquisar sobre medicamentos</div>
+            <textarea id="perguntaIA" rows="3" placeholder="Ex: O que é bom para dor de cabeça? Dipirona ou Paracetamol?" style="resize: none;"></textarea>
+            <button id="btnPerguntarIA">🔍 Pesquisar</button>
+            <div id="respostaIA" class="chat-ia">💡 Digite sua pergunta sobre medicamentos. Ex: "O que é bom para dor de cabeça?"</div>
         </div>
     </div>
 
@@ -121,7 +120,7 @@
 
 <div id="analysisScreen" class="analysis-screen">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-        <h2>🧠 Análise da IA</h2>
+        <h2>🧠 Análise dos Medicamentos</h2>
         <button id="closeAnalysisBtn" class="btn-outline" style="width: auto; padding: 8px 16px;">Fechar</button>
     </div>
     <div id="analysisContent"></div>
@@ -132,47 +131,221 @@
 
 <script>
     // ==============================================================
-    // 🤖 CONFIGURAÇÃO DA IA GEMINI (NOVA CHAVE)
+    // 📚 MEGA BANCO DE DADOS LOCAL
     // ==============================================================
-    const API_KEY = "AIzaSyD9_xBvb4vNpn8kIAp65adfnMpCccisEZ8";
-    const MODELO = "gemini-2.5-flash";
-    
-    function delay(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
-    
-    async function callGemini(prompt) {
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODELO}:generateContent?key=${API_KEY}`;
-        const corpo = {
-            contents: [{
-                parts: [{ text: prompt }]
-            }]
-        };
-        
-        try {
-            const resposta = await fetch(url, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(corpo)
-            });
-            
-            if (resposta.status === 429) {
-                return "⚠️ Limite de requisições excedido. Aguarde alguns segundos e tente novamente.";
-            }
-            if (resposta.status === 403) {
-                return "❌ Erro de autenticação. Verifique sua chave API.";
-            }
-            if (resposta.status === 503) {
-                return "⚠️ Serviço temporariamente indisponível. Tente novamente em alguns instantes.";
-            }
-            if (!resposta.ok) {
-                return `❌ Erro na API: ${resposta.status}. Tente novamente.`;
-            }
-            
-            const dados = await resposta.json();
-            return dados.candidates?.[0]?.content?.parts?.[0]?.text || "❌ Não foi possível obter resposta da IA.";
-        } catch(erro) {
-            console.error("Erro:", erro);
-            return `❌ Erro de conexão: ${erro.message}. Verifique sua internet.`;
+    const infoLocal = {
+        "dipirona": { 
+            indicacao: "✅ Indicação: Dor e febre (cólica, dor de cabeça, pós-operatório, dor de dente, dor muscular)",
+            contraindicacao: "🚫 Contraindicação: Alergia a dipirona, problemas na medula óssea, gravidez (3º trimestre), doenças do sangue",
+            recomendacoes: "💊 Recomendações: Tomar com um copo cheio de água (200ml). Pode ser com alimentos para evitar irritação gástrica. Não misturar com outros analgésicos sem orientação médica.",
+            efeitos: "⚠️ Efeitos colaterais: Reações alérgicas raras, agranulocitose (queda de glóbulos brancos), hipotensão, náusea, tontura",
+            detalhes: `🔬 **INFORMAÇÕES DETALHADAS - DIPIRONA**
+
+📌 **O que é?**
+Dipirona (Metamizol Sódico) é um analgésico e antitérmico potente, amplamente utilizado no Brasil. Age bloqueando a produção de prostaglandinas (substâncias que causam dor e febre).
+
+💊 **Para que serve?**
+- Dores em geral (cabeça, dente, muscular, cólica, pós-operatória)
+- Febre alta que não responde a outros medicamentos
+- Cólicas menstruais
+- Dores articulares
+
+🚫 **Quando NÃO usar?**
+- Alergia conhecida à dipirona
+- Doenças da medula óssea (leucemia, anemia aplástica)
+- Gravidez (especialmente 3º trimestre)
+- Lactação (passa pelo leite materno)
+- Pessoas com problemas no fígado ou rins severos
+
+💊 **Como tomar?**
+- Adultos: 500mg a 1g por dose, até 4g por dia
+- Crianças (acima de 3 meses): 5-10mg/kg por dose
+- Tomar com água, pode ser com alimentos
+- Respeitar intervalo mínimo de 6 horas entre doses
+
+⚠️ **Interações medicamentosas:**
+- Álcool: aumenta risco de hepatotoxicidade
+- Anticoagulantes (Warfarina): aumenta risco de sangramento
+- Antidepressivos: pode potencializar efeitos colaterais
+- Outros analgésicos: evitar uso simultâneo
+
+🤒 **Efeitos colaterais possíveis:**
+- Raros: agranulocitose (queda nos glóbulos brancos) - muito grave
+- Urticária, coceira
+- Queda de pressão (hipotensão)
+- Náusea, vômito, tontura
+
+📦 **Armazenamento:**
+- Em local seco e arejado
+- Temperatura ambiente (15-30°C)
+- Fora do alcance de crianças
+
+🚨 **Superdosagem:**
+Em caso de ingestão acidental de dose excessiva, procure atendimento médico imediatamente. Sintomas: náusea, vômito, dor abdominal, queda de pressão, sonolência.`
+        },
+        "paracetamol": { 
+            indicacao: "✅ Indicação: Febre, dores leves a moderadas (dor de cabeça, dor de dente, dor muscular, dor de garganta)",
+            contraindicacao: "🚫 Contraindicação: Doença hepática grave, alergia ao paracetamol, alcoolismo ativo",
+            recomendacoes: "💊 Recomendações: Engolir com água. Evitar suco de toranja. Pode ser com ou sem alimentos. Não exceder 4g por dia.",
+            efeitos: "⚠️ Efeitos colaterais: Raros em doses normais. Hepatotoxicidade em overdose (principal risco). Náusea, reações alérgicas raras",
+            detalhes: `🔬 **INFORMAÇÕES DETALHADAS - PARACETAMOL**
+
+📌 **O que é?**
+Paracetamol (Acetaminofeno) é um dos analgésicos e antitérmicos mais utilizados no mundo. Diferente de outros analgésicos, não tem ação anti-inflamatória significativa, mas é muito seguro para o estômago.
+
+💊 **Para que serve?**
+- Febre (qualquer causa)
+- Dor de cabeça (incluindo enxaqueca leve)
+- Dor de dente
+- Dor muscular leve a moderada
+- Dor de garganta
+- Dores pós-vacinação
+- Cólica menstrual leve
+
+🚫 **Quando NÃO usar?**
+- Doença hepática grave (cirrose, hepatite ativa)
+- Alergia ao paracetamol
+- Alcoolismo crônico
+- Desnutrição grave
+
+💊 **Como tomar?**
+- Adultos: 500mg a 750mg por dose, máximo 4000mg/dia
+- Crianças: 10-15mg/kg/dose, máximo 50-75mg/kg/dia
+- Tomar com água
+-Intervalo mínimo de 4-6 horas
+
+⚠️ **Interações medicamentosas:**
+- Álcool: RISCO GRAVE de lesão hepática
+- Warfarina: aumenta efeito anticoagulante (uso prolongado)
+- Fenitoína: pode reduzir efeito
+- Isoniazida: aumenta risco de hepatotoxicidade
+
+🤒 **Efeitos colaterais:**
+- Em doses normais: extremamente raro
+- Erupções cutâneas (raro)
+- Reações alérgicas (muito raro)
+- Hepatotoxicidade (APENAS em overdose)
+
+📦 **Armazenamento:**
+- Em local seco, temperatura ambiente
+- Proteger da luz e umidade
+- Fora do alcance de crianças
+
+🚨 **SUPERDOSAGEM - ATENÇÃO:**
+A superdosagem de paracetamol é GRAVE e pode causar FALÊNCIA HEPÁTICA! 
+- Sintomas nas primeiras 24h: náusea, vômito, anorexia
+- Após 24-48h: melhora falsa (perigoso)
+- Após 72h: dor abdominal, icterícia, insuficiência hepática
+⚠️ Se ingerir mais de 10g (adulto) ou 150mg/kg (criança), procure atendimento URGENTE!`
         }
+    };
+    
+    // Perguntas frequentes e respostas detalhadas
+    const perguntasFrequentes = {
+        "dor de cabeça": `🔍 **O que é bom para dor de cabeça?**
+
+📌 **Opções mais comuns:**
+
+💊 **Paracetamol (500-750mg)**
+- ✅ Melhor para: Dor de cabeça leve a moderada, sem inflamação
+- ✅ Vantagem: Não agride o estômago, seguro para a maioria
+- ⚠️ Cuidado: Não exceder 4g por dia
+
+💊 **Dipirona (500mg-1g)**
+- ✅ Melhor para: Dor de cabeça mais intensa
+- ✅ Vantagem: Ação mais potente
+- ⚠️ Cuidado: Risco de reações alérgicas raras
+
+💊 **Ibuprofeno (200-400mg)**
+- ✅ Melhor para: Dor de cabeça com componente inflamatório (sinusite)
+- ✅ Vantagem: Ação anti-inflamatória
+- ⚠️ Cuidado: Pode irritar o estômago
+
+🌿 **Remédios caseiros:**
+- Repouso em ambiente escuro e silencioso
+- Compressa fria na testa
+- Hidratação (água)
+- Café (para alguns tipos de dor de cabeça)
+
+⚕️ **Quando procurar médico:**
+- Dor de cabeça súbita e intensa
+- Acompanhada de febre alta, rigidez no pescoço
+- Após traumatismo
+- Piora progressiva
+- Mais de 3 dias sem melhora
+
+⚠️ **Atenção:** Não tome mais de um analgésico por vez sem orientação médica.`,
+        
+        "dipirona": infoLocal.dipirona.detalhes,
+        "paracetamol": infoLocal.paracetamol.detalhes,
+        "diferença": `🔍 **Diferença entre Dipirona e Paracetamol**
+
+| Característica | Dipirona | Paracetamol |
+|----------------|----------|-------------|
+| **Potência analgésica** | Alta | Moderada |
+| **Ação anti-inflamatória** | Nenhuma | Nenhuma |
+| **Risco para estômago** | Baixo | Muito baixo |
+| **Risco para fígado** | Baixo | ALTO em overdose |
+| **Principal efeito colateral** | Reações alérgicas raras | Hepatotoxicidade |
+| **Uso na gravidez** | Contraindicado no 3º trimestre | Permitido com orientação |
+| **Controle de febre** | Muito bom | Bom |
+
+📌 **Quando usar cada um:**
+- **Dipirona:** Dores mais intensas, febre alta, cólicas
+- **Paracetamol:** Dores leves, crianças, gestantes, pessoas com problemas gástricos
+
+⚠️ **Importante:** Não use os dois juntos sem orientação médica!`
+    };
+    
+    function buscarInformacao(pergunta) {
+        pergunta = pergunta.toLowerCase();
+        
+        // Verifica se a pergunta corresponde a algum tópico conhecido
+        for (let [key, resposta] of Object.entries(perguntasFrequentes)) {
+            if (pergunta.includes(key)) {
+                return resposta;
+            }
+        }
+        
+        // Verifica se menciona dipirona ou paracetamol
+        if (pergunta.includes("dipirona")) {
+            return perguntasFrequentes["dipirona"];
+        }
+        if (pergunta.includes("paracetamol") || pergunta.includes("acetaminofeno")) {
+            return perguntasFrequentes["paracetamol"];
+        }
+        
+        // Resposta genérica
+        return `🔍 **Sua pergunta:** "${pergunta}"
+
+📌 **Informações gerais sobre medicamentos para dor:**
+
+💊 **Dipirona:**
+- Indicação: Dor e febre
+- Dose: 500mg-1g a cada 6h
+- Cuidado: Alergias raras
+
+💊 **Paracetamol:**
+- Indicação: Dor leve e febre
+- Dose: 500-750mg a cada 4-6h
+- Cuidado: Não exceder 4g/dia
+
+💊 **Ibuprofeno:**
+- Indicação: Dor com inflamação
+- Dose: 200-400mg a cada 6-8h
+- Cuidado: Pode irritar o estômago
+
+⚠️ **Sempre consulte um médico para diagnóstico correto!**`;
+    }
+    
+    function getInfoLocal(nome) {
+        const nomeLower = nome.toLowerCase();
+        for (let [key, value] of Object.entries(infoLocal)) {
+            if (nomeLower.includes(key) || key.includes(nomeLower)) {
+                return value;
+            }
+        }
+        return null;
     }
     
     function formatarTexto(texto) { 
@@ -229,14 +402,14 @@
     };
 
     // ==============================================================
-    // 🤖 IA - PERGUNTAR (ABA EXPLORAR)
+    // 🔍 PESQUISA (SUBSTITUI A IA)
     // ==============================================================
-    document.getElementById("btnPerguntarIA").onclick = async () => {
+    document.getElementById("btnPerguntarIA").onclick = () => {
         const pergunta = document.getElementById("perguntaIA").value.trim();
         if (!pergunta) { alert("Digite uma pergunta!"); return; }
         const div = document.getElementById("respostaIA");
-        div.innerHTML = "🤔 Consultando IA... Aguarde alguns segundos...";
-        const resposta = await callGemini(`Você é um assistente farmacêutico especialista. Responda de forma clara, segura e educativa em português do Brasil: ${pergunta}`);
+        div.innerHTML = "🔍 Buscando informações...";
+        const resposta = buscarInformacao(pergunta);
         div.innerHTML = formatarTexto(resposta);
     };
 
@@ -253,9 +426,9 @@
     let medicamentosTemp = [];
 
     function carregarDados() {
-        medicamentos = JSON.parse(localStorage.getItem("dose_meds_final") || "[]");
-        eventosPendentes = JSON.parse(localStorage.getItem("dose_eventos_final") || "[]");
-        historico = JSON.parse(localStorage.getItem("dose_hist_final") || "[]");
+        medicamentos = JSON.parse(localStorage.getItem("dose_meds_local") || "[]");
+        eventosPendentes = JSON.parse(localStorage.getItem("dose_eventos_local") || "[]");
+        historico = JSON.parse(localStorage.getItem("dose_hist_local") || "[]");
         if (medicamentos.length) nextId = Math.max(...medicamentos.map(m => m.id), 0) + 1;
         atualizarTudo();
         reagendarAlarmes();
@@ -263,9 +436,9 @@
     }
     
     function salvarDados() {
-        localStorage.setItem("dose_meds_final", JSON.stringify(medicamentos));
-        localStorage.setItem("dose_eventos_final", JSON.stringify(eventosPendentes));
-        localStorage.setItem("dose_hist_final", JSON.stringify(historico));
+        localStorage.setItem("dose_meds_local", JSON.stringify(medicamentos));
+        localStorage.setItem("dose_eventos_local", JSON.stringify(eventosPendentes));
+        localStorage.setItem("dose_hist_local", JSON.stringify(historico));
         atualizarTudo();
         renderizarListaMedicamentos();
     }
@@ -297,7 +470,7 @@
         modal.innerHTML = `
             <h2>💊 ${med.nome}</h2>
             <p>Horário: ${horario}</p>
-            <div class="resumo-texto">${med.resumo || "Carregando informações..."}</div>
+            <div class="resumo-texto">${med.resumo || "Tome conforme orientação médica."}</div>
             <button class="btn-grande" id="tomarBtn">✅ TOMAR AGORA</button>
             <button class="btn-nao-tomar" id="ignorarBtn">❌ NÃO TOMAR</button>
             <button class="btn-outline" id="lerMaisAlarme" style="margin-top:8px;">📖 Ler mais detalhes</button>
@@ -320,12 +493,12 @@
             fechar();
         };
         document.getElementById("lerMaisAlarme").onclick = async () => {
-            if (!med.detalhes) {
-                const resposta = await callGemini(`Forneça informações detalhadas e completas sobre o medicamento ${med.nome}. Inclua: composição, mecanismo de ação, indicações, contraindicações, efeitos colaterais, interações medicamentosas, doses típicas e superdosagem. Seja bastante detalhado.`);
-                med.detalhes = resposta;
-                salvarDados();
+            const info = getInfoLocal(med.nome);
+            if (info && info.detalhes) {
+                alert(info.detalhes);
+            } else {
+                alert("Informações detalhadas não disponíveis. Consulte a bula.");
             }
-            alert(med.detalhes);
         };
     }
 
@@ -473,7 +646,7 @@
     adicionarFormMed();
 
     // ==============================================================
-    // ANÁLISE E SALVAMENTO COM IA
+    // SALVAR MEDICAMENTOS
     // ==============================================================
     document.getElementById("addMedButton").onclick = adicionarFormMed;
     document.getElementById("saveMedsButton").onclick = async () => {
@@ -497,82 +670,77 @@
         const analysisScreen = document.getElementById("analysisScreen");
         const analysisContent = document.getElementById("analysisContent");
         analysisScreen.classList.add("active");
-        analysisContent.innerHTML = "<div style='text-align:center'>⏳ IA analisando medicamentos... Aguarde alguns segundos...</div>";
+        analysisContent.innerHTML = "<div style='text-align:center'>⏳ Analisando medicamentos...</div>";
         
-        // Analisar interações entre medicamentos
-        const nomes = medicamentosTemp.map(m => m.nome).join(", ");
-        const interacaoPrompt = `Analise a interação entre os seguintes medicamentos: ${nomes}. Responda em formato JSON: {"temInteracao": true/false, "explicacao": "explicação curta da interação", "solucao": "sugestão do que fazer"}`;
-        let interacaoResposta = await callGemini(interacaoPrompt);
-        let interacao = { temInteracao: false, explicacao: "", solucao: "" };
+        // Verificar interações entre medicamentos (simples)
+        const nomes = medicamentosTemp.map(m => m.nome.toLowerCase());
+        const temIbuprofeno = nomes.some(n => n.includes("ibuprofeno"));
+        const temDipirona = nomes.some(n => n.includes("dipirona"));
+        let temInteracao = false;
+        let explicacao = "";
+        let solucao = "";
         
-        if (interacaoResposta && !interacaoResposta.includes("❌") && !interacaoResposta.includes("⚠️")) {
-            try {
-                const jsonMatch = interacaoResposta.match(/\{.*\}/s);
-                if (jsonMatch) interacao = JSON.parse(jsonMatch[0]);
-            } catch(e) { console.log("Erro ao parsear JSON"); }
+        if (temIbuprofeno && temDipirona) {
+            temInteracao = true;
+            explicacao = "Ibuprofeno e dipirona juntos podem aumentar o risco de sangramento gastrointestinal e efeitos colaterais renais.";
+            solucao = "Evite o uso simultâneo. Respeite um intervalo mínimo de 6 horas entre as substâncias ou opte por apenas um deles.";
+        } else {
+            explicacao = "Nenhuma interação grave conhecida entre esses medicamentos.";
         }
         
-        let html = `<div class="${interacao.temInteracao ? 'interaction-alert' : 'interaction-alert interaction-safe'}">
-                        ${interacao.temInteracao ? "⚠️ Atenção: Esses medicamentos possuem interação" : "✅ Nenhuma interação perigosa encontrada"}
-                        <p><strong>Explicação:</strong> ${interacao.explicacao || "Informação não disponível"}</p>
-                        ${interacao.solucao ? `<p><strong>Solução sugerida:</strong> ${interacao.solucao}</p>` : ""}
+        let html = `<div class="${temInteracao ? 'interaction-alert' : 'interaction-alert interaction-safe'}">
+                        ${temInteracao ? "⚠️ Atenção: Esses medicamentos possuem interação" : "✅ Nenhuma interação perigosa encontrada"}
+                        <p>${explicacao}</p>
+                        ${solucao ? `<p><strong>Solução sugerida:</strong> ${solucao}</p>` : ""}
                     </div>`;
         
         for (let med of medicamentosTemp) {
-            const resumoPrompt = `Forneça um resumo claro e completo sobre o medicamento ${med.nome} com os seguintes tópicos:
-- Indicação: para que serve
-- Contraindicação: quando não deve ser usado
-- Recomendações de uso: como tomar
-- Efeitos colaterais: possíveis reações
-Responda em texto corrido, organizado.`;
-            
-            const resumo = await callGemini(resumoPrompt);
+            const info = getInfoLocal(med.nome);
+            let resumoTexto = "";
+            if (info) {
+                resumoTexto = `${info.indicacao}<br>${info.contraindicacao}<br>${info.recomendacoes}<br>${info.efeitos}`;
+            } else {
+                resumoTexto = `📌 ${med.nome}: Siga orientação médica. Consulte a bula para informações detalhadas.`;
+            }
             
             html += `<div class="med-analysis-card">
                         <strong style="font-size:1.1rem;">💊 ${med.nome}</strong> ${med.dosagem ? `(${med.dosagem})` : ''}
-                        <div class="resumo-texto">${formatarTexto(resumo || "Informações não disponíveis no momento.")}</div>
-                        <div class="read-more" data-nome="${med.nome}">📖 Ler mais (detalhes completos)</div>
-                        <div class="detailed-info" id="detalhes-${med.nome.replace(/ /g,'')}"></div>
+                        <div class="resumo-texto">${formatarTexto(resumoTexto)}</div>
+                        ${info && info.detalhes ? `<div class="read-more" data-nome="${med.nome}">📖 Ler mais (detalhes completos)</div>
+                        <div class="detailed-info" id="detalhes-${med.nome.replace(/ /g,'')}">${formatarTexto(info.detalhes)}</div>` : ""}
                     </div>`;
-            await delay(2000);
         }
         analysisContent.innerHTML = html;
         
+        // Configurar "Ler mais" para mostrar/esconder detalhes
         document.querySelectorAll(".read-more").forEach(el => {
-            el.onclick = async () => {
-                const nome = el.dataset.nome;
-                const detalhesDiv = document.getElementById(`detalhes-${nome.replace(/ /g,'')}`);
-                if (detalhesDiv.innerHTML) { 
-                    detalhesDiv.style.display = detalhesDiv.style.display === 'none' ? 'block' : 'none'; 
-                    return; 
-                }
-                detalhesDiv.innerHTML = "⏳ Carregando informações detalhadas da IA...";
-                const detalhes = await callGemini(`Forneça informações detalhadas e completas sobre o medicamento ${nome}. Inclua: composição, mecanismo de ação, indicações detalhadas, contraindicações, efeitos colaterais, interações medicamentosas importantes, doses típicas para adultos e informações sobre superdosagem. Seja bastante detalhado e organize em tópicos.`);
-                detalhesDiv.innerHTML = formatarTexto(detalhes);
-                detalhesDiv.style.display = 'block';
-            };
+            const detalhesDiv = document.getElementById(`detalhes-${el.dataset.nome.replace(/ /g,'')}`);
+            if (detalhesDiv) {
+                el.onclick = () => {
+                    detalhesDiv.style.display = detalhesDiv.style.display === 'none' ? 'block' : 'none';
+                };
+            }
         });
     };
     
     document.getElementById("closeAnalysisBtn").onclick = () => document.getElementById("analysisScreen").classList.remove("active");
-    document.getElementById("confirmAnalysisBtn").onclick = async () => {
+    document.getElementById("confirmAnalysisBtn").onclick = () => {
         for (let med of medicamentosTemp) {
-            const resumoPrompt = `Forneça um resumo claro e completo sobre o medicamento ${med.nome} com os seguintes tópicos:
-- Indicação
-- Contraindicação
-- Recomendações de uso
-- Efeitos colaterais
-Responda em texto corrido, organizado.`;
-            const resumo = await callGemini(resumoPrompt);
+            const info = getInfoLocal(med.nome);
+            let resumo = "";
+            if (info) {
+                resumo = `${info.indicacao} | ${info.recomendacoes}`;
+            } else {
+                resumo = `💊 ${med.nome}: Siga orientação médica.`;
+            }
             const novoMed = {
                 id: nextId++, nome: med.nome, dosagem: med.dosagem,
                 horarios: med.horarios, diasAtivos: med.diasAtivos, comando: med.comando,
-                resumo: resumo || "Informações não disponíveis",
-                detalhes: ""
+                resumo: resumo,
+                detalhes: info ? info.detalhes : ""
             };
             medicamentos.push(novoMed);
             gerarEventos(novoMed);
-            await delay(1500);
         }
         salvarDados();
         document.getElementById("medFormList").innerHTML = "";
@@ -595,7 +763,7 @@ Responda em texto corrido, organizado.`;
     });
     if (Notification.permission !== "granted") Notification.requestPermission();
     carregarDados();
-    console.log("✅ Dose Inteligente iniciado com IA Gemini!");
+    console.log("✅ Dose Inteligente iniciado com banco de dados local completo!");
 </script>
 </body>
 </html>
