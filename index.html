@@ -132,10 +132,29 @@
 
 <script>
     // ==============================================================
-    // 🤖 CONFIGURAÇÃO DA IA GEMINI
+    // 🤖 CONFIGURAÇÃO DA IA GEMINI + FALLBACK LOCAL
     // ==============================================================
     const API_KEY = "AIzaSyAimm6RWLV8I29U6q5od1VPllqXyn-7DbM";
     const MODELO = "gemini-2.5-flash";
+    
+    // Banco de dados local para fallback
+    const infoLocal = {
+        "dipirona": { indicacao: "Dor e febre", contraindicacao: "Alergia a dipirona, problemas na medula", recomendacoes: "Tomar com água, máximo 4g/dia", efeitos: "Reações alérgicas raras" },
+        "ibuprofeno": { indicacao: "Inflamação, dor muscular, febre", contraindicacao: "Úlcera, insuficiência renal", recomendacoes: "Tomar com alimentos, máximo 1200mg/dia", efeitos: "Azia, náusea" },
+        "paracetamol": { indicacao: "Febre, dores leves", contraindicacao: "Doença hepática grave", recomendacoes: "Máximo 4g/dia, evitar álcool", efeitos: "Hepatotoxicidade em overdose" },
+        "amoxicilina": { indicacao: "Infecções bacterianas", contraindicacao: "Alergia a penicilinas", recomendacoes: "Completar o tratamento", efeitos: "Diarreia, candidíase" },
+        "omeprazol": { indicacao: "Azia, refluxo", contraindicacao: "Hipersensibilidade", recomendacoes: "Tomar em jejum pela manhã", efeitos: "Dor de cabeça, diarreia" }
+    };
+    
+    function getInfoLocal(nome) {
+        const nomeLower = nome.toLowerCase();
+        for (let [key, value] of Object.entries(infoLocal)) {
+            if (nomeLower.includes(key) || key.includes(nomeLower)) {
+                return value;
+            }
+        }
+        return null;
+    }
     
     async function callGemini(prompt, tipo = "geral") {
         let fullPrompt = "";
@@ -159,6 +178,35 @@
             const dados = await resposta.json();
             return dados.candidates?.[0]?.content?.parts?.[0]?.text || null;
         } catch(e) { return null; }
+    }
+    
+    async function obterResumoMedicamento(nome) {
+        // Primeiro tenta buscar local
+        const local = getInfoLocal(nome);
+        if (local) {
+            return {
+                indicacao: local.indicacao,
+                contraindicacao: local.contraindicacao,
+                recomendacoes: local.recomendacoes,
+                efeitos: local.efeitos
+            };
+        }
+        
+        // Se não tem local, tenta IA
+        const resposta = await callGemini(nome, "resumo");
+        if (resposta) {
+            try {
+                return JSON.parse(resposta);
+            } catch(e) {}
+        }
+        
+        // Fallback genérico
+        return {
+            indicacao: "Consulte a bula do medicamento",
+            contraindicacao: "Consulte a bula do medicamento",
+            recomendacoes: "Siga orientação médica",
+            efeitos: "Consulte a bula do medicamento"
+        };
     }
     
     function formatarTexto(texto) { return texto ? texto.replace(/\n/g, '<br>') : ""; }
@@ -485,12 +533,19 @@
         analysisScreen.classList.add("active");
         analysisContent.innerHTML = "⏳ Analisando medicamentos...";
         
-        // Analisar interações
+        // Analisar interações (simplificado com fallback)
         const nomes = medicamentosTemp.map(m => m.nome).join(", ");
-        const interacaoResposta = await callGemini(nomes, "interacoes");
+        let interacaoResposta = await callGemini(nomes, "interacoes");
         let interacao = { temInteracao: false, explicacao: "", solucao: "" };
         if (interacaoResposta) {
             try { interacao = JSON.parse(interacaoResposta); } catch(e) {}
+        } else if (medicamentosTemp.length >= 2) {
+            // Fallback simples para interação comum
+            const temIbu = medicamentosTemp.some(m => m.nome.toLowerCase().includes("ibuprofeno"));
+            const temDip = medicamentosTemp.some(m => m.nome.toLowerCase().includes("dipirona"));
+            if (temIbu && temDip) {
+                interacao = { temInteracao: true, explicacao: "Ibuprofeno e dipirona podem aumentar risco de sangramento gastrointestinal.", solucao: "Tome com pelo menos 6 horas de diferença." };
+            }
         }
         
         let html = `<div class="${interacao.temInteracao ? 'interaction-alert' : 'interaction-alert interaction-safe'}">
@@ -500,18 +555,14 @@
                     </div>`;
         
         for (let med of medicamentosTemp) {
-            const resumoJSON = await callGemini(med.nome, "resumo");
-            let resumo = { nome: med.nome, indicacao: "", contraindicacao: "", recomendacoes: "", efeitos: "" };
-            if (resumoJSON) {
-                try { resumo = JSON.parse(resumoJSON); } catch(e) {}
-            }
+            const resumo = await obterResumoMedicamento(med.nome);
             html += `<div class="med-analysis-card">
                         <strong style="font-size:1.1rem;">💊 ${med.nome}</strong> ${med.dosagem ? `(${med.dosagem})` : ''}
                         <div class="resumo-texto">
-                            <strong>📌 Indicação:</strong> ${resumo.indicacao || "Informação não disponível"}<br>
-                            <strong>🚫 Contraindicação:</strong> ${resumo.contraindicacao || "Informação não disponível"}<br>
-                            <strong>💊 Recomendações:</strong> ${resumo.recomendacoes || "Informação não disponível"}<br>
-                            <strong>⚠️ Efeitos colaterais:</strong> ${resumo.efeitos || "Informação não disponível"}
+                            <strong>📌 Indicação:</strong> ${resumo.indicacao}<br>
+                            <strong>🚫 Contraindicação:</strong> ${resumo.contraindicacao}<br>
+                            <strong>💊 Recomendações:</strong> ${resumo.recomendacoes}<br>
+                            <strong>⚠️ Efeitos colaterais:</strong> ${resumo.efeitos}
                         </div>
                         <div class="read-more" data-nome="${med.nome}">📖 Ler mais</div>
                         <div class="detailed-info" id="detalhes-${med.nome.replace(/ /g,'')}"></div>
@@ -536,15 +587,11 @@
     document.getElementById("closeAnalysisBtn").onclick = () => document.getElementById("analysisScreen").classList.remove("active");
     document.getElementById("confirmAnalysisBtn").onclick = async () => {
         for (let med of medicamentosTemp) {
-            const resumoJSON = await callGemini(med.nome, "resumo");
-            let resumo = { indicacao: "", contraindicacao: "", recomendacoes: "", efeitos: "" };
-            if (resumoJSON) {
-                try { resumo = JSON.parse(resumoJSON); } catch(e) {}
-            }
+            const resumo = await obterResumoMedicamento(med.nome);
             const novoMed = {
                 id: nextId++, nome: med.nome, dosagem: med.dosagem,
                 horarios: med.horarios, diasAtivos: med.diasAtivos, comando: med.comando,
-                resumo: `📌 ${resumo.indicacao || ""}. 🚫 ${resumo.contraindicacao || ""}. 💊 ${resumo.recomendacoes || ""}`,
+                resumo: `📌 ${resumo.indicacao || "Consulte médico"} | 🚫 ${resumo.contraindicacao || "Consulte médico"} | 💊 ${resumo.recomendacoes || "Siga orientação"}`,
                 detalhes: ""
             };
             medicamentos.push(novoMed);
