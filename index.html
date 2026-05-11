@@ -473,4 +473,100 @@ Use apenas informações factuais e seguras. Responda em português.`;
             <div class="form-grid"><input type="text" placeholder="Nome do medicamento *" class="medNome"><input type="text" placeholder="Dosagem (ex: 500mg)" class="medDosagem"></div>
             <input type="text" placeholder="Horários (ex: 08:00,14:00)" class="medHorarios">
             <select class="medIntervalo"><option value="0">-- Intervalo --</option><option value="4">4h</option><option value="6">6h</option><option value="8">8h</option><option value="12">12h</option><option value="24">1x/dia</option></select>
-            <div class="weekdays"><span data-day="0" class="weekday-btn">Dom</span
+            <div class="weekdays"><span data-day="0" class="weekday-btn">Dom</span><span data-day="1" class="weekday-btn">Seg</span><span data-day="2" class="weekday-btn">Ter</span><span data-day="3" class="weekday-btn">Qua</span><span data-day="4" class="weekday-btn">Qui</span><span data-day="5" class="weekday-btn">Sex</span><span data-day="6" class="weekday-btn">Sáb</span></div>
+            <input type="text" placeholder="Comando Bluetooth (ex: A, B, T)" class="medComando" maxlength="1">
+            <button class="remove-form-btn" style="background:#EB5757; margin-top:8px;">Remover este medicamento</button>
+        `;
+        div.querySelectorAll(".weekday-btn").forEach(btn => btn.onclick = e => { e.stopPropagation(); btn.classList.toggle("active"); });
+        div.querySelector(".remove-form-btn").onclick = () => div.remove();
+        container.appendChild(div);
+    }
+    document.getElementById("addMedButton").onclick = adicionarFormMed;
+    adicionarFormMed();
+
+    // Análise com IA (com DELAY entre chamadas para evitar 429)
+    document.getElementById("continueAnalysisButton").onclick = async () => {
+        const forms = document.querySelectorAll("#medFormList .med-item");
+        if (!forms.length) { alert("Adicione pelo menos um medicamento"); return; }
+        const medicamentosTemp = [];
+        for (let form of forms) {
+            const nome = form.querySelector(".medNome").value.trim();
+            if (!nome) continue;
+            const dosagem = form.querySelector(".medDosagem").value.trim();
+            let horarios = form.querySelector(".medHorarios").value.trim().split(",").map(h => h.trim()).filter(h => h);
+            const intervalo = parseInt(form.querySelector(".medIntervalo").value);
+            if (!horarios.length && intervalo) horarios = gerarHorariosPorIntervalo(intervalo);
+            const dias = Array.from(form.querySelectorAll(".weekday-btn.active")).map(btn => parseInt(btn.dataset.day));
+            const comandoArduino = form.querySelector(".medComando").value.trim();
+            medicamentosTemp.push({ nome, dosagem, horarios: horarios.length ? horarios : ["08:00"], diasAtivos: dias.length ? dias : [0,1,2,3,4,5,6], comandoArduino });
+        }
+        if (!medicamentosTemp.length) { alert("Nenhum medicamento válido"); return; }
+        const analysisScreen = document.getElementById("analysisScreen");
+        const analysisContent = document.getElementById("analysisContent");
+        analysisScreen.classList.add("active");
+        analysisContent.innerHTML = "<div style='text-align:center'>⏳ IA analisando medicamentos...</div>";
+
+        const nomes = medicamentosTemp.map(m => m.nome).join(", ");
+        const interacaoResposta = await callGemini(nomes, "interacoes");
+        let temInteracao = interacaoResposta.toLowerCase().includes("sim") || interacaoResposta.toLowerCase().includes("perigosa");
+        let explicacao = interacaoResposta.substring(0, 200);
+        let solucao = interacaoResposta.includes("Solução") ? interacaoResposta.split("Solução")[1] : "";
+
+        let html = `<div class="${temInteracao ? 'interaction-alert' : 'interaction-alert interaction-safe'}">
+                        ${temInteracao ? "⚠️ Atenção: Esses medicamentos possuem interação" : "✅ Nenhuma interação perigosa encontrada"}
+                        <p>${explicacao}</p>
+                        ${temInteracao && solucao ? `<p><strong>Solução:</strong> ${solucao}</p>` : ""}
+                    </div>`;
+        
+        for (let i = 0; i < medicamentosTemp.length; i++) {
+            const med = medicamentosTemp[i];
+            const resumoObrigatorio = await callGemini(med.nome, "resumoObrigatorio");
+            const faltando = [];
+            if (!med.dosagem) faltando.push("dose");
+            if (!med.horarios || med.horarios.length === 0) faltando.push("horários");
+            let sugestaoHtml = "";
+            if (faltando.length) {
+                const sugestaoIA = await callGemini({ nome: med.nome, faltando: faltando.join(", ") }, "sugestao");
+                sugestaoHtml = `<div class="suggested-badge">🔵 O sistema sugere: ${sugestaoIA}</div>`;
+            }
+            html += `<div class="med-analysis-card">
+                        <strong style="font-size:1.2rem;">💊 ${med.nome}</strong> ${med.dosagem ? `(${med.dosagem})` : ''}
+                        ${sugestaoHtml}
+                        <div class="resumo-obrigatorio">${formatarTextoIA(resumoObrigatorio)}</div>
+                        <div class="read-more" data-med="${med.nome}" data-resumo="${resumoObrigatorio.replace(/"/g, '&quot;')}">📖 Ler mais</div>
+                        <div class="detailed-info" id="detalhes-${med.nome.replace(/ /g, '')}"></div>
+                    </div>`;
+            await delay(2000); // 🔥 DELAY de 2 segundos entre cada medicamento para evitar 429
+        }
+        analysisContent.innerHTML = html;
+        
+        document.querySelectorAll(".read-more").forEach(el => {
+            el.onclick = async () => {
+                const nome = el.dataset.med;
+                const detalhesDiv = document.getElementById(`detalhes-${nome.replace(/ /g, '')}`);
+                if (detalhesDiv.innerHTML && detalhesDiv.style.display === 'block') {
+                    detalhesDiv.style.display = 'none';
+                    return;
+                }
+                let detalhes = await callGemini(nome, "detalhesOrganizado");
+                detalhesDiv.innerHTML = formatarTextoIA(detalhes);
+                detalhesDiv.style.display = 'block';
+            };
+        });
+    };
+    document.getElementById("closeAnalysisBtn").onclick = () => document.getElementById("analysisScreen").classList.remove("active");
+    document.getElementById("reviseCadastroBtn").onclick = () => document.getElementById("analysisScreen").classList.remove("active");
+    document.getElementById("confirmTreatmentBtn").onclick = async () => {
+        const forms = document.querySelectorAll("#medFormList .med-item");
+        for (let form of forms) {
+            const nome = form.querySelector(".medNome").value.trim();
+            if (!nome) continue;
+            const dosagem = form.querySelector(".medDosagem").value.trim();
+            let horarios = form.querySelector(".medHorarios").value.trim().split(",").map(h => h.trim()).filter(h => h);
+            const intervalo = parseInt(form.querySelector(".medIntervalo").value);
+            if (!horarios.length && intervalo) horarios = gerarHorariosPorIntervalo(intervalo);
+            const dias = Array.from(form.querySelectorAll(".weekday-btn.active")).map(btn => parseInt(btn.dataset.day));
+            const comandoArduino = form.querySelector(".medComando").value.trim();
+            const resumoObrigatorio = await callGemini(nome, "resumoObrigatorio");
+            const novoMed = {
+                id: nextId++, nome, dosagem, horarios: horarios.length ? horarios : ["08:00"], diasAtivos: dias.length ? dias
