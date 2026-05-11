@@ -107,12 +107,12 @@
 </div>
 
 <script>
-    // --------------------------------------------------------------
-    // 1. CONFIGURAÇÃO DA IA GEMINI
-    // --------------------------------------------------------------
-    const API_KEY = "AIzaSyDGBGbL9goex5cNukWKNM2iMXwRdO4cPCo";
-    const MODELO = "gemini-2.5-flash";
-
+   // --------------------------------------------------------------
+// 1. CONFIGURAÇÃO DA IA GEMINI
+// --------------------------------------------------------------
+const API_KEY = "AIzaSyDGBGbL9goex5cNukWKNM2iMXwRdO4cPCo";
+const MODELO = "gemini-1.5-flash";  // ✅ 60 requisições por minuto, 6x mais que 2.5-flash
+    
     function formatarTextoIA(texto) {
         if (!texto) return "";
         let html = texto.replace(/\n/g, '<br>');
