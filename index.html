@@ -3,256 +3,76 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>Dose Inteligente</title>
+    <title>Dose Inteligente - IA Gemini</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            -webkit-tap-highlight-color: transparent;
-        }
-        body {
-            background: #F5F7FA;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            overflow-x: hidden;
-        }
-        .app-container {
-            max-width: 550px;
-            margin: 0 auto;
-            background: #F5F7FA;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-        }
-        .app-header {
-            background: white;
-            padding: 20px 20px 12px;
-            border-bottom: 1px solid #E0E0E0;
-        }
-        .app-header h1 {
-            font-size: 1.8rem;
-            color: #2F80ED;
-        }
-        .app-header p {
-            font-size: 0.85rem;
-            color: #828282;
-            margin-top: 4px;
-        }
-        .aviso-permanente {
-            background: #FFF3E0;
-            padding: 8px 12px;
-            font-size: 0.7rem;
-            text-align: center;
-            color: #ED6A2E;
-            border-radius: 20px;
-            margin-top: 10px;
-        }
-        .tab-bar {
-            display: flex;
-            background: white;
-            border-top: 1px solid #E0E0E0;
-            border-bottom: 1px solid #E0E0E0;
-        }
-        .tab {
-            flex: 1;
-            text-align: center;
-            padding: 12px 0;
-            font-weight: 600;
-            color: #828282;
-            cursor: pointer;
-            background: white;
-            border: none;
-            font-size: 0.9rem;
-        }
-        .tab.active {
-            color: #2F80ED;
-            border-bottom: 2px solid #2F80ED;
-        }
-        .page {
-            display: none;
-            padding: 20px 16px 80px;
-            flex: 1;
-        }
-        .page.active {
-            display: block;
-        }
-        .card {
-            background: white;
-            border-radius: 28px;
-            padding: 20px;
-            margin-bottom: 20px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.03);
-            border: 1px solid #EDEDF0;
-        }
-        .card-title {
-            font-size: 1.1rem;
-            font-weight: 600;
-            margin-bottom: 16px;
-            border-left: 4px solid #2F80ED;
-            padding-left: 12px;
-            color: #1E2A3E;
-        }
-        input, select, textarea {
-            background: #F5F7FA;
-            border: 1px solid #E0E0E0;
-            border-radius: 40px;
-            padding: 12px 16px;
-            width: 100%;
-            font-size: 0.9rem;
-            margin-bottom: 12px;
-        }
-        .form-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-        }
-        .weekdays {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-            margin: 12px 0;
-        }
-        .weekday-btn {
-            background: #F2F2F6;
-            padding: 8px 12px;
-            border-radius: 30px;
-            font-size: 0.75rem;
-            cursor: pointer;
-        }
-        .weekday-btn.active {
-            background: #2F80ED;
-            color: white;
-        }
-        button {
-            background: #2F80ED;
-            border: none;
-            border-radius: 40px;
-            padding: 12px 20px;
-            font-weight: 600;
-            font-size: 0.9rem;
-            color: white;
-            cursor: pointer;
-            width: 100%;
-            margin-top: 8px;
-        }
-        button.btn-outline {
-            background: transparent;
-            border: 1px solid #2F80ED;
-            color: #2F80ED;
-        }
-        button.btn-danger {
-            background: #EB5757;
-        }
-        button.btn-ia {
-            background: #6C5CE7;
-        }
-        .schedule-item {
-            background: #F5F7FA;
-            border-radius: 20px;
-            padding: 12px;
-            margin-bottom: 10px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 8px;
-        }
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(2,1fr);
-            gap: 12px;
-            text-align: center;
-        }
-        .stat-card {
-            background: #F5F7FA;
-            border-radius: 20px;
-            padding: 12px;
-        }
-        .stat-number {
-            font-size: 1.8rem;
-            font-weight: 800;
-            color: #2F80ED;
-        }
-        .status-bluetooth {
-            background: #E8F0FE;
-            padding: 8px;
-            border-radius: 20px;
-            margin-top: 8px;
-            font-size: 0.8rem;
-            text-align: center;
-        }
-        .teste-sucesso {
-            background: #2F80ED10;
-            border: 1px solid #2F80ED;
-            padding: 8px;
-            border-radius: 16px;
-            margin-top: 12px;
-            font-size: 0.75rem;
-        }
-        .chat-ia {
-            background: #F8F9FC;
-            border-radius: 20px;
-            padding: 16px;
-            margin-top: 16px;
-            min-height: 150px;
-            white-space: pre-wrap;
-        }
-        .alarm-modal {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: white;
-            border-radius: 32px 32px 0 0;
-            padding: 24px 20px 32px;
-            z-index: 2000;
-            box-shadow: 0 -4px 20px rgba(0,0,0,0.1);
-            transform: translateY(100%);
-            transition: 0.3s;
-        }
-        .alarm-modal.show {
-            transform: translateY(0);
-        }
-        .alarm-modal h2 {
-            font-size: 1.5rem;
-        }
-        .btn-grande {
-            background: #2F80ED;
-            font-size: 1.1rem;
-            padding: 16px;
-            margin: 16px 0;
-        }
-        .btn-nao-tomar {
-            background: #A0AAB5;
-        }
-        @media (max-width: 500px) {
-            .form-grid {
-                grid-template-columns: 1fr;
-            }
-            .tab {
-                font-size: 0.75rem;
-                padding: 10px 0;
-            }
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { background: #F5F7FA; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; overflow-x: hidden; }
+        .app-container { max-width: 550px; margin: 0 auto; background: #F5F7FA; min-height: 100vh; display: flex; flex-direction: column; }
+        .app-header { background: white; padding: 20px 20px 12px; border-bottom: 1px solid #E0E0E0; }
+        .app-header h1 { font-size: 1.8rem; color: #2F80ED; }
+        .app-header p { font-size: 0.85rem; color: #828282; margin-top: 4px; }
+        .aviso-permanente { background: #FFF3E0; padding: 8px 12px; font-size: 0.7rem; text-align: center; color: #ED6A2E; border-radius: 20px; margin-top: 10px; }
+        .tab-bar { display: flex; background: white; border-top: 1px solid #E0E0E0; border-bottom: 1px solid #E0E0E0; }
+        .tab { flex: 1; text-align: center; padding: 12px 0; font-weight: 600; color: #828282; cursor: pointer; background: white; border: none; font-size: 1rem; }
+        .tab.active { color: #2F80ED; border-bottom: 2px solid #2F80ED; }
+        .page { display: none; padding: 20px 16px 80px; flex: 1; }
+        .page.active { display: block; }
+        .card { background: white; border-radius: 28px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.03); border: 1px solid #EDEDF0; }
+        .card-title { font-size: 1.2rem; font-weight: 600; margin-bottom: 16px; border-left: 4px solid #2F80ED; padding-left: 12px; color: #1E2A3E; }
+        input, select, textarea { background: #F5F7FA; border: 1px solid #E0E0E0; border-radius: 40px; padding: 12px 16px; width: 100%; font-size: 1rem; margin-bottom: 12px; }
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .weekdays { display: flex; gap: 8px; flex-wrap: wrap; margin: 12px 0; }
+        .weekday-btn { background: #F2F2F6; padding: 8px 12px; border-radius: 30px; font-size: 0.8rem; cursor: pointer; }
+        .weekday-btn.active { background: #2F80ED; color: white; }
+        button { background: #2F80ED; border: none; border-radius: 40px; padding: 12px 20px; font-weight: 600; font-size: 1rem; color: white; cursor: pointer; width: 100%; margin-top: 8px; }
+        button.btn-outline { background: transparent; border: 1px solid #2F80ED; color: #2F80ED; }
+        button.btn-danger { background: #EB5757; }
+        button.btn-ia { background: #6C5CE7; }
+        .schedule-item { background: #F5F7FA; border-radius: 20px; padding: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
+        .stats-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 12px; text-align: center; }
+        .stat-card { background: #F5F7FA; border-radius: 20px; padding: 12px; }
+        .stat-number { font-size: 2rem; font-weight: 800; color: #2F80ED; }
+        .analysis-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #F5F7FA; z-index: 1000; overflow-y: auto; padding: 20px; display: none; }
+        .analysis-screen.active { display: block; }
+        .interaction-alert { background: #EB5757; color: white; padding: 16px; border-radius: 24px; margin-bottom: 20px; text-align: center; }
+        .interaction-safe { background: #2F80ED20; color: #2F80ED; border: 1px solid #2F80ED; }
+        .med-analysis-card { background: white; border-radius: 28px; padding: 16px; margin-bottom: 16px; }
+        .suggested-badge { background: #FFE9D6; color: #ED6A2E; font-size: 0.7rem; padding: 4px 8px; border-radius: 50px; display: inline-block; margin: 8px 0; }
+        .read-more { color: #2F80ED; font-weight: 600; margin-top: 12px; cursor: pointer; display: inline-block; }
+        .detailed-info { display: none; margin-top: 12px; padding-top: 12px; border-top: 1px solid #E0E0E0; font-size: 0.9rem; line-height: 1.4; }
+        .resumo-obrigatorio { background: #F5F7FA; padding: 12px; border-radius: 20px; font-size: 0.9rem; line-height: 1.5; margin: 8px 0; white-space: pre-wrap; }
+        .modal-central { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 3000; display: flex; align-items: center; justify-content: center; visibility: hidden; opacity: 0; transition: 0.2s; }
+        .modal-central.show { visibility: visible; opacity: 1; }
+        .modal-central-content { background: white; max-width: 500px; width: 90%; max-height: 80vh; border-radius: 32px; overflow-y: auto; padding: 24px; position: relative; }
+        .alarm-modal { position: fixed; bottom: 0; left: 0; right: 0; background: white; border-radius: 32px 32px 0 0; padding: 24px 20px 32px; z-index: 2000; box-shadow: 0 -4px 20px rgba(0,0,0,0.1); transform: translateY(100%); transition: 0.3s; }
+        .alarm-modal.show { transform: translateY(0); }
+        .alarm-modal h2 { font-size: 1.8rem; }
+        .btn-grande { background: #2F80ED; font-size: 1.3rem; padding: 16px; margin: 16px 0; }
+        .btn-nao-tomar { background: #A0AAB5; }
+        .status-bluetooth { background: #E8F0FE; padding: 8px; border-radius: 20px; margin-top: 8px; font-size: 0.8rem; text-align: center; }
+        .teste-sucesso { background: #2F80ED10; border: 1px solid #2F80ED; padding: 10px; border-radius: 16px; margin-top: 12px; font-size: 0.8rem; }
+        .chat-ia { background: #F8F9FC; border-radius: 20px; padding: 16px; margin-bottom: 16px; }
+        .chat-pergunta { background: #2F80ED; color: white; padding: 12px; border-radius: 20px; margin: 8px 0; max-width: 85%; align-self: flex-end; }
+        .chat-resposta { background: #F5F7FA; padding: 12px; border-radius: 20px; margin: 8px 0; max-width: 85%; }
+        @media (max-width: 500px) { .form-grid { grid-template-columns: 1fr; } }
     </style>
 </head>
 <body>
 <div class="app-container">
     <div class="app-header">
         <h1>💊 Dose Inteligente</h1>
-        <p>IA • Bluetooth • Alarmes inteligentes</p>
+        <p>IA Gemini • Bluetooth HC-06 • Alarmes</p>
         <div class="aviso-permanente">⚠️ Este aplicativo não substitui orientação médica</div>
     </div>
 
     <div class="tab-bar">
         <button class="tab active" data-tab="inicio">Início</button>
         <button class="tab" data-tab="medicamentos">Medicamentos</button>
-        <button class="tab" data-tab="ia">Explorar IA</button>
+        <button class="tab" data-tab="explorar">Explorar IA</button>
         <button class="tab" data-tab="config">Configurar</button>
     </div>
 
-    <!-- Aba Início -->
     <div id="inicio" class="page active">
         <div class="card">
             <div class="card-title">📊 Estatísticas</div>
@@ -270,13 +90,12 @@
         </div>
     </div>
 
-    <!-- Aba Medicamentos -->
     <div id="medicamentos" class="page">
         <div class="card">
             <div class="card-title">➕ Cadastrar medicamento(s)</div>
             <div id="medFormList"></div>
             <button id="addMedButton" class="btn-outline">+ Adicionar outro</button>
-            <button id="saveMedsButton">💾 Salvar e iniciar alarmes</button>
+            <button id="continueAnalysisButton">📊 Analisar medicamentos</button>
         </div>
         <div class="card">
             <div class="card-title">📋 Seus medicamentos</div>
@@ -284,19 +103,17 @@
         </div>
     </div>
 
-    <!-- Aba Explorar IA -->
-    <div id="ia" class="page">
+    <div id="explorar" class="page">
         <div class="card">
             <div class="card-title">🤖 Pergunte para a IA</div>
             <textarea id="perguntaIA" rows="3" placeholder="Ex: O que é bom para dor de cabeça? Qual a diferença entre dipirona e paracetamol?" style="resize: none;"></textarea>
             <button id="btnPerguntarIA" class="btn-ia">🔍 Perguntar</button>
-            <div id="respostaIA" class="chat-ia">
+            <div id="respostaIA" class="chat-ia" style="margin-top: 16px; min-height: 150px;">
                 💡 As respostas da IA aparecerão aqui.
             </div>
         </div>
     </div>
 
-    <!-- Aba Configurar -->
     <div id="config" class="page">
         <div class="card">
             <div class="card-title">🔷 Bluetooth HC-06</div>
@@ -311,19 +128,94 @@
     </div>
 </div>
 
+<div id="analysisScreen" class="analysis-screen">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h2>🧠 Análise da IA</h2>
+        <button id="closeAnalysisBtn" class="btn-outline" style="width: auto; padding: 8px 16px;">Fechar</button>
+    </div>
+    <div id="analysisContent"></div>
+    <div style="display: flex; gap: 12px; margin: 30px 0 50px;">
+        <button id="reviseCadastroBtn" class="btn-outline" style="flex:1">✏️ Revisar cadastro</button>
+        <button id="confirmTreatmentBtn" style="flex:1; background:#2F80ED;">✅ Confirmar e iniciar</button>
+    </div>
+</div>
+
 <script>
     // ==============================================================
-    // 🤖 CONFIGURAÇÃO DA IA (SIMULADA - SUBSTITUIR PELA API REAL)
+    // 🤖 CONFIGURAÇÃO DA IA GEMINI (NOVA CHAVE + FALLBACK)
     // ==============================================================
-    async function callGemini(prompt) {
-        // Simulação de resposta (substitua pela chamada real da API)
-        await new Promise(r => setTimeout(r, 800));
-        return `🔹 **Resposta sobre:** "${prompt}"\n\nEste é um modo de demonstração. Conecte a API Gemini para obter informações reais sobre medicamentos, interações e recomendações.`;
-    }
-
+    const API_KEY = "AIzaSyDidF9zsNvHvSJkTYee6VbIefv64DGV1Fg";
+    const MODELOS = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"];
+    
+    let cacheIA = {};
+    let modeloAtivo = 0;
+    
+    function delay(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
+    
     function formatarTexto(texto) {
         if (!texto) return "";
-        return texto.replace(/\n/g, '<br>');
+        let html = texto.replace(/\n/g, '<br>');
+        html = html.replace(/^- (.*)/gm, '• $1<br>');
+        html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+        return html;
+    }
+    
+    async function callGemini(prompt, tipo) {
+        let cacheKey = `${tipo}_${prompt.substring(0, 50)}`;
+        if (cacheIA[cacheKey]) {
+            console.log("🔁 Usando cache para:", prompt.substring(0, 40));
+            return cacheIA[cacheKey];
+        }
+        
+        let fullPrompt = "";
+        if (tipo === "interacoes") {
+            fullPrompt = `Analise os seguintes medicamentos: ${prompt}. Responda apenas em português, de forma clara e curta, seguindo este formato:
+- Interação perigosa? (sim/não)
+- Explicação (máximo 2 linhas)
+- Solução (se houver, indique intervalo de horas)`;
+        } else if (tipo === "resumo") {
+            fullPrompt = `Para o medicamento "${prompt}", forneça EXATAMENTE estes 5 tópicos com marcadores (-):
+- Nome do medicamento
+- Indicação
+- Contraindicação
+- Recomendações de uso
+- Possíveis efeitos colaterais
+Use apenas informações factuais e seguras. Responda em português.`;
+        } else if (tipo === "detalhes") {
+            fullPrompt = `Para o medicamento "${prompt}", forneça informações detalhadas e organizadas em tópicos (use marcadores -). Inclua: mecanismo de ação, interações medicamentosas, doses típicas, armazenamento, superdosagem. Seja completo e bem estruturado.`;
+        } else if (tipo === "pergunta") {
+            fullPrompt = `Responda em português, de forma clara, segura e educativa: ${prompt}`;
+        } else {
+            fullPrompt = `Responda em português, de forma clara e segura, organizada em tópicos simples: ${prompt}`;
+        }
+        
+        for (let tentativa = modeloAtivo; tentativa < MODELOS.length; tentativa++) {
+            const modelo = MODELOS[tentativa];
+            try {
+                console.log(`📡 Tentando modelo ${modelo}...`);
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent?key=${API_KEY}`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ contents: [{ parts: [{ text: fullPrompt }] }] })
+                });
+                
+                if (!response.ok) {
+                    const erro = await response.text();
+                    console.warn(`Modelo ${modelo} falhou: ${response.status}`);
+                    continue;
+                }
+                
+                const data = await response.json();
+                const texto = data.candidates?.[0]?.content?.parts?.[0]?.text || "Sem resposta.";
+                cacheIA[cacheKey] = texto;
+                modeloAtivo = tentativa;
+                return texto;
+            } catch(e) {
+                console.warn(`Erro no modelo ${modelo}:`, e);
+            }
+        }
+        
+        return `❌ Erro: Nenhum modelo disponível. Verifique sua chave API e conexão.`;
     }
 
     // ==============================================================
@@ -348,23 +240,25 @@
             document.getElementById("statusBluetooth").innerHTML = `✅ Conectado a ${device.name}`;
             alert("Conectado ao HC-06!");
         } catch(e) {
+            console.error(e);
             document.getElementById("statusBluetooth").innerHTML = "❌ Falha na conexão";
-            alert("Não foi possível conectar.");
+            alert("Não foi possível conectar. Verifique se o HC-06 está ligado e pareado.");
         }
     }
     
     async function enviarComando(cmd) {
         if (modoSimulacaoBt) {
-            document.getElementById("simulacaoBtMsg").innerHTML = `🚀 Simulação: comando '${cmd}' enviado!`;
-            setTimeout(() => document.getElementById("simulacaoBtMsg").innerHTML = "", 2000);
+            document.getElementById("simulacaoBtMsg").innerHTML = `🚀 Simulação: comando '${cmd}' enviado para o motor!`;
+            setTimeout(() => document.getElementById("simulacaoBtMsg").innerHTML = "", 3000);
             return true;
         }
         if (!bluetoothCharacteristic) {
-            alert("Bluetooth não conectado.");
+            alert("Bluetooth não conectado. Conecte-se ao HC-06 primeiro.");
             return false;
         }
         try {
             await bluetoothCharacteristic.writeValue(new TextEncoder().encode(cmd));
+            console.log(`Comando enviado: ${cmd}`);
             return true;
         } catch(e) { return false; }
     }
@@ -372,21 +266,33 @@
     document.getElementById("simularBtBtn").onclick = () => {
         modoSimulacaoBt = true;
         document.getElementById("statusBluetooth").innerHTML = "✅ MODO SIMULAÇÃO ATIVO";
-        document.getElementById("simulacaoBtMsg").innerHTML = "🔧 Modo simulação ativado.";
-        setTimeout(() => document.getElementById("simulacaoBtMsg").innerHTML = "", 3000);
+        document.getElementById("simulacaoBtMsg").innerHTML = "🔧 Modo simulação ativado. Os comandos serão simulados na tela.";
+        setTimeout(() => document.getElementById("simulacaoBtMsg").innerHTML = "", 4000);
     };
 
     // ==============================================================
-    // 🤖 PERGUNTAR PARA IA
+    // 🤖 PERGUNTAR PARA IA (Chat)
     // ==============================================================
     document.getElementById("btnPerguntarIA").onclick = async () => {
         const pergunta = document.getElementById("perguntaIA").value.trim();
-        if (!pergunta) { alert("Digite uma pergunta!"); return; }
+        if (!pergunta) {
+            alert("Digite uma pergunta!");
+            return;
+        }
+        
         const divResposta = document.getElementById("respostaIA");
-        divResposta.innerHTML = "🤔 Pensando...";
-        const resposta = await callGemini(pergunta);
+        divResposta.innerHTML = "🤔 Pensando... Aguarde alguns segundos...";
+        
+        const resposta = await callGemini(pergunta, "pergunta");
         divResposta.innerHTML = formatarTexto(resposta);
     };
+    
+    // Permitir Ctrl+Enter no textarea
+    document.getElementById("perguntaIA").addEventListener("keydown", (e) => {
+        if (e.ctrlKey && e.key === "Enter") {
+            document.getElementById("btnPerguntarIA").click();
+        }
+    });
 
     // ==============================================================
     // 📊 DADOS GLOBAIS
@@ -400,21 +306,19 @@
     let grafico = null;
 
     function carregarDados() {
-        try {
-            medicamentos = JSON.parse(localStorage.getItem("dose_meds_completo") || "[]");
-            eventosPendentes = JSON.parse(localStorage.getItem("dose_eventos_completo") || "[]");
-            historico = JSON.parse(localStorage.getItem("dose_hist_completo") || "[]");
-            if (medicamentos.length) nextId = Math.max(...medicamentos.map(m => m.id), 0) + 1;
-        } catch(e) {}
+        medicamentos = JSON.parse(localStorage.getItem("dose_meds_final") || "[]");
+        eventosPendentes = JSON.parse(localStorage.getItem("dose_eventos_final") || "[]");
+        historico = JSON.parse(localStorage.getItem("dose_hist_final") || "[]");
+        if (medicamentos.length) nextId = Math.max(...medicamentos.map(m => m.id), 0) + 1;
         atualizarTudo();
         reagendarAlarmes();
         renderizarListaMedicamentos();
     }
     
     function salvarDados() {
-        localStorage.setItem("dose_meds_completo", JSON.stringify(medicamentos));
-        localStorage.setItem("dose_eventos_completo", JSON.stringify(eventosPendentes));
-        localStorage.setItem("dose_hist_completo", JSON.stringify(historico));
+        localStorage.setItem("dose_meds_final", JSON.stringify(medicamentos));
+        localStorage.setItem("dose_eventos_final", JSON.stringify(eventosPendentes));
+        localStorage.setItem("dose_hist_final", JSON.stringify(historico));
         atualizarTudo();
         renderizarListaMedicamentos();
     }
@@ -425,205 +329,190 @@
     }
 
     // ==============================================================
-    // 🔔 ALARMES
+    // 🔔 ALARMES E NOTIFICAÇÕES
     // ==============================================================
     function tocarSom() {
         if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         try {
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
-            osc.frequency.value = 880;
-            gain.gain.value = 0.2;
-            osc.start();
-            gain.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + 2);
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            osc.frequency.value = 880; gain.gain.value = 0.2;
+            osc.start(); gain.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + 2);
             osc.stop(audioCtx.currentTime + 2);
         } catch(e) {}
         if (navigator.vibrate) navigator.vibrate([500, 300, 500]);
     }
 
-    function mostrarModalAlarme(med, horario) {
-        const modalExistente = document.getElementById("modalAlarmeAtivo");
-        if (modalExistente) modalExistente.remove();
-        
+    function mostrarModalLerMais(resumo, detalhes) {
+        let modal = document.getElementById("centralModal");
+        if (!modal) {
+            modal = document.createElement("div");
+            modal.id = "centralModal";
+            modal.className = "modal-central";
+            modal.innerHTML = `<div class="modal-central-content"><h3>📖 Informações completas</h3><div class="resumo"></div><div class="detalhes"></div><button id="fecharModalBtn" class="btn-outline">Fechar</button></div>`;
+            document.body.appendChild(modal);
+            document.getElementById("fecharModalBtn").onclick = () => modal.classList.remove("show");
+        }
+        modal.querySelector(".resumo").innerHTML = `<strong>📌 Resumo</strong><br>${formatarTexto(resumo)}`;
+        modal.querySelector(".detalhes").innerHTML = `<strong>🔬 Detalhes</strong><br>${formatarTexto(detalhes)}`;
+        modal.classList.add("show");
+    }
+
+    function mostrarAlarme(evento) {
+        const med = medicamentos.find(m => m.id === evento.medicamentoId);
+        if (!med) return;
         const modal = document.createElement("div");
-        modal.id = "modalAlarmeAtivo";
         modal.className = "alarm-modal";
         modal.innerHTML = `
             <h2>💊 ${med.nome}</h2>
-            <p style="font-size:1rem; margin:8px 0;">Horário: ${horario}</p>
-            <div style="background:#F5F7FA; padding:12px; border-radius:20px; margin:12px 0; font-size:0.85rem;">
-                ${med.resumo || "Tome conforme orientação médica."}
-            </div>
-            <button class="btn-grande" id="tomarBtn">✅ TOMAR AGORA</button>
-            <button class="btn-nao-tomar" id="ignorarBtn">❌ NÃO TOMAR</button>
+            <p style="font-size:1.2rem;">Horário: ${evento.horario}</p>
+            <div class="resumo-obrigatorio">${formatarTexto(med.resumo || "Carregando informações...")}</div>
+            <button class="btn-grande" id="tomarAgoraBtn">✅ TOMAR AGORA</button>
+            <button id="naoTomarBtn" class="btn-nao-tomar">❌ Não tomar</button>
+            <button id="lerMaisBtn" class="btn-outline" style="margin-top:12px;">📖 Ler mais</button>
         `;
         document.body.appendChild(modal);
         setTimeout(() => modal.classList.add("show"), 10);
-        
         const fechar = () => {
             modal.classList.remove("show");
             setTimeout(() => modal.remove(), 300);
         };
         
-        document.getElementById("tomarBtn").onclick = async () => {
+        document.getElementById("tomarAgoraBtn").onclick = async () => {
+            marcarTomado(evento.id);
             if (med.comando) await enviarComando(med.comando);
-            registrarHistorico(med.id, horario, "tomado");
             fechar();
         };
-        
-        document.getElementById("ignorarBtn").onclick = () => {
-            registrarHistorico(med.id, horario, "ignorado");
+        document.getElementById("naoTomarBtn").onclick = () => {
+            marcarIgnorado(evento.id);
             fechar();
         };
+        document.getElementById("lerMaisBtn").onclick = async () => {
+            let detalhes = med.detalhes;
+            if (!detalhes) {
+                detalhes = await callGemini(med.nome, "detalhes");
+                med.detalhes = detalhes;
+                salvarDados();
+            }
+            mostrarModalLerMais(med.resumo || "Resumo indisponível", detalhes);
+        };
+    }
+    
+    function marcarTomado(eventoId) {
+        const ev = eventosPendentes.find(e => e.id === eventoId);
+        if (ev && !ev.tomado) {
+            ev.tomado = true;
+            registrarHistorico(ev.medicamentoId, ev.horario, "tomado");
+            atualizarTudo();
+            reagendarAlarmes();
+        }
+    }
+    
+    function marcarIgnorado(eventoId) {
+        const ev = eventosPendentes.find(e => e.id === eventoId);
+        if (ev && !ev.tomado) {
+            ev.tomado = true;
+            registrarHistorico(ev.medicamentoId, ev.horario, "ignorado");
+            atualizarTudo();
+            reagendarAlarmes();
+        }
     }
 
     function reagendarAlarmes() {
-        for (let [id, timeout] of alarmesAtivos) clearTimeout(timeout);
+        for (let [id, to] of alarmesAtivos) clearTimeout(to);
         alarmesAtivos.clear();
-        
-        const agora = new Date();
-        for (let evento of eventosPendentes) {
-            if (evento.tomado) continue;
-            const med = medicamentos.find(m => m.id === evento.medicamentoId);
-            if (!med) continue;
-            
-            const dataEvento = new Date(evento.dataReferencia);
-            const tempoRestante = dataEvento.getTime() - agora.getTime();
-            
-            if (tempoRestante > 0) {
-                const timeoutId = setTimeout(() => {
+        const agora = Date.now();
+        for (let ev of eventosPendentes) {
+            if (ev.tomado) continue;
+            const tempo = new Date(ev.dataReferencia).getTime() - agora;
+            if (tempo > 0) {
+                const id = setTimeout(() => {
                     tocarSom();
                     if (Notification.permission === "granted") {
-                        new Notification("Dose Inteligente", { body: `Hora de tomar ${med.nome}!` });
+                        const medNome = medicamentos.find(m => m.id === ev.medicamentoId)?.nome;
+                        new Notification("Dose Inteligente", { body: `Hora de tomar ${medNome}` });
                     }
-                    mostrarModalAlarme(med, evento.horario);
-                }, tempoRestante);
-                alarmesAtivos.set(evento.id, timeoutId);
+                    mostrarAlarme(ev);
+                }, tempo);
+                alarmesAtivos.set(ev.id, id);
             }
         }
     }
 
     // ==============================================================
-    // 📝 GERADOR DE EVENTOS
+    // 📝 CRUD DE MEDICAMENTOS
     // ==============================================================
     function gerarHorarios(intervalo, inicio = "08:00") {
-        if (intervalo === 0) return [inicio];
         let horarios = [];
         let [h, m] = inicio.split(":").map(Number);
         let mins = h * 60 + m;
-        let totalHoras = 24;
-        let qtde = totalHoras / intervalo;
-        for (let i = 0; i < qtde; i++) {
+        for (let i = 0; i < 24 / intervalo; i++) {
             let total = (mins + i * intervalo * 60) % 1440;
-            horarios.push(`${Math.floor(total/60).toString().padStart(2,'0')}:${(total%60).toString().padStart(2,'0')}`);
+            horarios.push(`${Math.floor(total / 60).toString().padStart(2, '0')}:${(total % 60).toString().padStart(2, '0')}`);
         }
-        return [...new Set(horarios)].sort();
+        return [...new Set(horarios)];
     }
 
     function gerarEventos(med) {
         const hoje = new Date();
         const novos = [];
-        
         for (let i = 0; i < 14; i++) {
-            const data = new Date();
-            data.setDate(hoje.getDate() + i);
-            const diaSemana = data.getDay();
-            
-            if (med.diasAtivos.includes(diaSemana)) {
-                for (let horario of med.horarios) {
-                    const [h, m] = horario.split(":").map(Number);
-                    const dt = new Date(data);
-                    dt.setHours(h, m, 0, 0);
-                    
-                    if (dt.getTime() > new Date().getTime()) {
-                        const existe = eventosPendentes.some(e => 
-                            e.medicamentoId === med.id && e.dataReferencia === dt.toISOString()
-                        );
-                        if (!existe) {
-                            novos.push({
-                                id: Date.now() + Math.random(),
-                                medicamentoId: med.id,
-                                horario: horario,
-                                dataReferencia: dt.toISOString(),
-                                tomado: false
-                            });
-                        }
+            const data = new Date(); data.setDate(hoje.getDate() + i);
+            const dia = data.getDay();
+            if (med.diasAtivos.includes(dia)) {
+                for (let hor of med.horarios) {
+                    const [h, m] = hor.split(":").map(Number);
+                    const dt = new Date(data); dt.setHours(h, m, 0, 0);
+                    if (dt > new Date() && !eventosPendentes.some(e => e.medicamentoId === med.id && e.dataReferencia === dt.toISOString())) {
+                        novos.push({ id: Date.now() + Math.random(), medicamentoId: med.id, horario: hor, dataReferencia: dt.toISOString(), tomado: false });
                     }
                 }
             }
         }
-        
         eventosPendentes.push(...novos);
-        eventosPendentes.sort((a,b) => new Date(a.dataReferencia) - new Date(b.dataReferencia));
+        eventosPendentes.sort((a, b) => new Date(a.dataReferencia) - new Date(b.dataReferencia));
         reagendarAlarmes();
         salvarDados();
     }
 
-    // ==============================================================
-    // RENDERIZAÇÃO DA UI
-    // ==============================================================
     function atualizarTudo() {
-        // Próximos eventos
         const futuros = eventosPendentes.filter(e => !e.tomado && new Date(e.dataReferencia) > new Date()).slice(0, 5);
         const proximosDiv = document.getElementById("proximosContainer");
-        if (futuros.length === 0) {
-            proximosDiv.innerHTML = "<div style='padding:16px;text-align:center'>Nenhum evento futuro</div>";
-        } else {
-            proximosDiv.innerHTML = futuros.map(e => {
-                const med = medicamentos.find(m => m.id === e.medicamentoId);
-                const data = new Date(e.dataReferencia);
-                return `<div class="schedule-item">
-                            <div><strong>${med?.nome}</strong></div>
-                            <div>${data.toLocaleDateString()} ${e.horario}</div>
-                        </div>`;
-            }).join('');
-        }
-        
-        // Estatísticas
+        proximosDiv.innerHTML = futuros.length ? futuros.map(e => {
+            const med = medicamentos.find(m => m.id === e.medicamentoId);
+            return `<div class="schedule-item"><div><strong>${med?.nome}</strong></div><div>${new Date(e.dataReferencia).toLocaleDateString()} ${e.horario}</div></div>`;
+        }).join('') : "<div style='padding:16px;text-align:center'>Nenhum evento futuro</div>";
+
         const total = historico.length;
         const tomados = historico.filter(h => h.status === "tomado").length;
         const taxa = total ? Math.round(tomados / total * 100) : 0;
         const hoje = new Date().toDateString();
         const tomadosHoje = historico.filter(h => h.status === "tomado" && new Date(h.timestamp).toDateString() === hoje).length;
         const ignoradosHoje = historico.filter(h => h.status === "ignorado" && new Date(h.timestamp).toDateString() === hoje).length;
-        
         document.getElementById("totalEventos").innerText = total;
         document.getElementById("taxaAcertos").innerText = `${taxa}%`;
         document.getElementById("tomadosHoje").innerText = tomadosHoje;
         document.getElementById("ignoradosHoje").innerText = ignoradosHoje;
-        
-        // Gráfico
-        const labels = [];
-        const dados = [];
+
+        const labels = [], dados = [];
         for (let i = 6; i >= 0; i--) {
-            let d = new Date();
-            d.setDate(d.getDate() - i);
+            let d = new Date(); d.setDate(d.getDate() - i);
             labels.push(d.toLocaleDateString());
             const count = historico.filter(h => h.status === "tomado" && new Date(h.timestamp).toDateString() === d.toDateString()).length;
             dados.push(count);
         }
         if (grafico) grafico.destroy();
         const ctx = document.getElementById("graficoAdesao").getContext("2d");
-        grafico = new Chart(ctx, {
-            type: 'line',
-            data: { labels, datasets: [{ label: 'Tomados', data: dados, borderColor: '#2F80ED', tension: 0.3 }] }
-        });
+        grafico = new Chart(ctx, { type: 'line', data: { labels, datasets: [{ label: 'Tomados', data: dados, borderColor: '#2F80ED', tension: 0.3 }] } });
     }
 
     function renderizarListaMedicamentos() {
         const container = document.getElementById("medList");
-        if (!medicamentos.length) {
-            container.innerHTML = "<div style='text-align:center; padding:20px'>Nenhum medicamento cadastrado</div>";
-            return;
-        }
+        if (!medicamentos.length) { container.innerHTML = "<div style='text-align:center; padding:20px'>Nenhum medicamento cadastrado</div>"; return; }
         container.innerHTML = medicamentos.map(med => `
             <div class="schedule-item">
-                <div>
-                    <strong>${med.nome}</strong> ${med.dosagem ? `(${med.dosagem})` : ''}<br>
-                    <span style="font-size:0.7rem;">${med.horarios.join(", ")}</span>
-                </div>
+                <div><strong>${med.nome}</strong> ${med.dosagem ? `(${med.dosagem})` : ''}<br><span style="font-size:0.7rem;">${med.horarios.join(", ")}</span><br>🔌 Comando: ${med.comando || "nenhum"}</div>
                 <button class="btn-danger" style="width:auto; padding:6px 12px;" onclick="removerMed(${med.id})">Remover</button>
             </div>
         `).join('');
@@ -634,133 +523,119 @@
         eventosPendentes = eventosPendentes.filter(e => e.medicamentoId !== id);
         historico = historico.filter(h => h.medicamentoId !== id);
         salvarDados();
-        renderizarListaMedicamentos();
-        reagendarAlarmes();
     };
 
-    // ==============================================================
-    // FORMULÁRIO DINÂMICO
-    // ==============================================================
     function adicionarFormMed() {
         const container = document.getElementById("medFormList");
         const div = document.createElement("div");
         div.className = "med-item";
-        div.style.background = "#F5F7FA";
-        div.style.borderRadius = "20px";
-        div.style.padding = "16px";
-        div.style.marginBottom = "16px";
         div.innerHTML = `
-            <div class="form-grid">
-                <input type="text" placeholder="Nome do medicamento *" class="medNome">
-                <input type="text" placeholder="Dosagem" class="medDosagem">
-            </div>
+            <div class="form-grid"><input type="text" placeholder="Nome do medicamento *" class="medNome"><input type="text" placeholder="Dosagem" class="medDosagem"></div>
             <input type="text" placeholder="Horários (ex: 08:00,14:00)" class="medHorarios">
-            <select class="medIntervalo">
-                <option value="0">-- Intervalo --</option>
-                <option value="4">4h</option>
-                <option value="6">6h</option>
-                <option value="8">8h</option>
-                <option value="12">12h</option>
-                <option value="24">1x/dia</option>
-            </select>
-            <div class="weekdays">
-                <span data-day="0" class="weekday-btn">Dom</span>
-                <span data-day="1" class="weekday-btn">Seg</span>
-                <span data-day="2" class="weekday-btn">Ter</span>
-                <span data-day="3" class="weekday-btn">Qua</span>
-                <span data-day="4" class="weekday-btn">Qui</span>
-                <span data-day="5" class="weekday-btn">Sex</span>
-                <span data-day="6" class="weekday-btn">Sáb</span>
-            </div>
-            <input type="text" placeholder="Comando Bluetooth (ex: M, A, B)" class="medComando" maxlength="1">
+            <select class="medIntervalo"><option value="0">-- Intervalo --</option><option value="4">4h</option><option value="6">6h</option><option value="8">8h</option><option value="12">12h</option><option value="24">1x/dia</option></select>
+            <div class="weekdays"><span data-day="0" class="weekday-btn">Dom</span><span data-day="1" class="weekday-btn">Seg</span><span data-day="2" class="weekday-btn">Ter</span><span data-day="3" class="weekday-btn">Qua</span><span data-day="4" class="weekday-btn">Qui</span><span data-day="5" class="weekday-btn">Sex</span><span data-day="6" class="weekday-btn">Sáb</span></div>
+            <input type="text" placeholder="Comando Bluetooth (ex: A, M)" class="medComando" maxlength="1">
             <button class="remove-form-btn" style="background:#EB5757; margin-top:8px;">Remover</button>
         `;
-        
-        div.querySelectorAll(".weekday-btn").forEach(btn => {
-            btn.onclick = e => {
-                e.stopPropagation();
-                btn.classList.toggle("active");
-            };
-        });
+        div.querySelectorAll(".weekday-btn").forEach(btn => btn.onclick = e => { e.stopPropagation(); btn.classList.toggle("active"); });
         div.querySelector(".remove-form-btn").onclick = () => div.remove();
         container.appendChild(div);
     }
     
+    document.getElementById("addMedButton").onclick = adicionarFormMed;
+    adicionarFormMed();
+
     // ==============================================================
-    // SALVAR MEDICAMENTOS
+    // 🔍 ANÁLISE COM IA (FALLBACK AUTOMÁTICO)
     // ==============================================================
-    function salvarMedicamentos() {
+    document.getElementById("continueAnalysisButton").onclick = async () => {
         const forms = document.querySelectorAll("#medFormList .med-item");
-        if (forms.length === 0) {
-            alert("Adicione pelo menos um medicamento");
-            return;
-        }
-        
-        let salvos = 0;
-        
+        if (!forms.length) { alert("Adicione pelo menos um medicamento"); return; }
+        const medicamentosTemp = [];
         for (let form of forms) {
             const nome = form.querySelector(".medNome").value.trim();
             if (!nome) continue;
-            
             const dosagem = form.querySelector(".medDosagem").value.trim();
-            const comando = form.querySelector(".medComando").value.trim().toUpperCase();
-            
-            // Horários
-            let horarios = [];
-            const horariosStr = form.querySelector(".medHorarios").value.trim();
-            if (horariosStr) {
-                horarios = horariosStr.split(",").map(h => h.trim()).filter(h => h);
-            }
-            
+            let horarios = form.querySelector(".medHorarios").value.trim().split(",").map(h => h.trim()).filter(h => h);
             const intervalo = parseInt(form.querySelector(".medIntervalo").value);
-            if (horarios.length === 0 && intervalo > 0) {
-                horarios = gerarHorarios(intervalo);
-            }
-            if (horarios.length === 0) {
-                horarios = ["08:00"];
-            }
-            
-            // Dias da semana
-            let diasAtivos = [];
-            form.querySelectorAll(".weekday-btn.active").forEach(btn => {
-                diasAtivos.push(parseInt(btn.dataset.day));
-            });
-            if (diasAtivos.length === 0) {
-                diasAtivos = [0, 1, 2, 3, 4, 5, 6];
-            }
-            
-            const novoMed = {
-                id: nextId++,
-                nome: nome,
-                dosagem: dosagem,
-                horarios: horarios,
-                diasAtivos: diasAtivos,
-                comando: comando,
-                resumo: `💊 ${nome}: Tome conforme orientação médica. Respeite os horários programados.`
+            if (!horarios.length && intervalo) horarios = gerarHorarios(intervalo);
+            const dias = Array.from(form.querySelectorAll(".weekday-btn.active")).map(btn => parseInt(btn.dataset.day));
+            const comando = form.querySelector(".medComando").value.trim();
+            medicamentosTemp.push({ nome, dosagem, horarios: horarios.length ? horarios : ["08:00"], diasAtivos: dias.length ? dias : [0,1,2,3,4,5,6], comando });
+        }
+        if (!medicamentosTemp.length) { alert("Nenhum medicamento válido"); return; }
+        
+        const analysisScreen = document.getElementById("analysisScreen");
+        const analysisContent = document.getElementById("analysisContent");
+        analysisScreen.classList.add("active");
+        analysisContent.innerHTML = "<div style='text-align:center'>⏳ IA analisando medicamentos... Aguarde</div>";
+
+        const nomes = medicamentosTemp.map(m => m.nome).join(", ");
+        const interacaoResposta = await callGemini(nomes, "interacoes");
+        let temInteracao = interacaoResposta.toLowerCase().includes("sim");
+        let html = `<div class="${temInteracao ? 'interaction-alert' : 'interaction-alert interaction-safe'}">
+                        ${temInteracao ? "⚠️ Atenção: Esses medicamentos possuem interação" : "✅ Nenhuma interação perigosa encontrada"}
+                        <p>${formatarTexto(interacaoResposta)}</p>
+                    </div>`;
+                    
+        for (let i = 0; i < medicamentosTemp.length; i++) {
+            const med = medicamentosTemp[i];
+            const resumo = await callGemini(med.nome, "resumo");
+            html += `<div class="med-analysis-card">
+                        <strong style="font-size:1.2rem;">💊 ${med.nome}</strong> ${med.dosagem ? `(${med.dosagem})` : ''}
+                        <div class="resumo-obrigatorio">${formatarTexto(resumo)}</div>
+                        <div class="read-more" data-med="${med.nome}">📖 Ler mais</div>
+                        <div class="detailed-info" id="detalhes-${med.nome.replace(/ /g, '')}"></div>
+                    </div>`;
+            await delay(2000);
+        }
+        analysisContent.innerHTML = html;
+        
+        document.querySelectorAll(".read-more").forEach(el => {
+            el.onclick = async () => {
+                const nome = el.dataset.med;
+                const detalhesDiv = document.getElementById(`detalhes-${nome.replace(/ /g, '')}`);
+                if (detalhesDiv.style.display === 'block') { detalhesDiv.style.display = 'none'; return; }
+                detalhesDiv.innerHTML = "⏳ Carregando detalhes...";
+                const detalhes = await callGemini(nome, "detalhes");
+                detalhesDiv.innerHTML = formatarTexto(detalhes);
+                detalhesDiv.style.display = 'block';
             };
-            
+        });
+    };
+    
+    document.getElementById("closeAnalysisBtn").onclick = () => document.getElementById("analysisScreen").classList.remove("active");
+    document.getElementById("reviseCadastroBtn").onclick = () => document.getElementById("analysisScreen").classList.remove("active");
+    document.getElementById("confirmTreatmentBtn").onclick = async () => {
+        const forms = document.querySelectorAll("#medFormList .med-item");
+        for (let form of forms) {
+            const nome = form.querySelector(".medNome").value.trim();
+            if (!nome) continue;
+            const dosagem = form.querySelector(".medDosagem").value.trim();
+            let horarios = form.querySelector(".medHorarios").value.trim().split(",").map(h => h.trim()).filter(h => h);
+            const intervalo = parseInt(form.querySelector(".medIntervalo").value);
+            if (!horarios.length && intervalo) horarios = gerarHorarios(intervalo);
+            const dias = Array.from(form.querySelectorAll(".weekday-btn.active")).map(btn => parseInt(btn.dataset.day));
+            const comando = form.querySelector(".medComando").value.trim();
+            const resumo = await callGemini(nome, "resumo");
+            const novoMed = {
+                id: nextId++, nome, dosagem, horarios: horarios.length ? horarios : ["08:00"], diasAtivos: dias.length ? dias : [0,1,2,3,4,5,6],
+                comando, resumo, detalhes: ""
+            };
             medicamentos.push(novoMed);
             gerarEventos(novoMed);
-            salvos++;
+            await delay(1500);
         }
-        
-        if (salvos === 0) {
-            alert("Nenhum medicamento válido");
-            return;
-        }
-        
-        // Limpar formulário
+        salvarDados();
         document.getElementById("medFormList").innerHTML = "";
         adicionarFormMed();
-        
-        alert(`${salvos} medicamento(s) cadastrado(s)! Os alarmes foram configurados.`);
-    }
+        document.getElementById("analysisScreen").classList.remove("active");
+        alert("Tratamento iniciado! Os alarmes foram configurados.");
+    };
 
     // ==============================================================
     // ⚙️ INICIALIZAÇÃO
     // ==============================================================
-    document.getElementById("addMedButton").onclick = adicionarFormMed;
-    document.getElementById("saveMedsButton").onclick = salvarMedicamentos;
     document.getElementById("conectarBluetoothBtn").onclick = conectarBluetooth;
     document.getElementById("testarMotorBtn").onclick = async () => {
         await enviarComando("M");
@@ -768,7 +643,7 @@
             alert("Conecte-se ao HC-06 primeiro ou ative o modo simulação.");
         }
     };
-    
+
     document.querySelectorAll(".tab").forEach(tab => {
         tab.onclick = () => {
             document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
@@ -777,11 +652,10 @@
             document.getElementById(tab.dataset.tab).classList.add("active");
         };
     });
-    
+
     if (Notification.permission !== "granted") Notification.requestPermission();
     carregarDados();
-    adicionarFormMed();
-    console.log("✅ Dose Inteligente iniciado com sucesso!");
+    console.log("✅ App inicializado com sucesso!");
 </script>
 </body>
 </html>
