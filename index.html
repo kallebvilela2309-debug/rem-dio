@@ -28,6 +28,7 @@
         button { background: #2F80ED; border: none; border-radius: 40px; padding: 12px 20px; font-weight: 600; font-size: 1rem; color: white; cursor: pointer; width: 100%; margin-top: 8px; }
         button.btn-outline { background: transparent; border: 1px solid #2F80ED; color: #2F80ED; }
         button.btn-danger { background: #EB5757; }
+        button.btn-ia { background: #6C5CE7; }
         .schedule-item { background: #F5F7FA; border-radius: 20px; padding: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
         .stats-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 12px; text-align: center; }
         .stat-card { background: #F5F7FA; border-radius: 20px; padding: 12px; }
@@ -51,6 +52,9 @@
         .btn-nao-tomar { background: #A0AAB5; }
         .status-bluetooth { background: #E8F0FE; padding: 8px; border-radius: 20px; margin-top: 8px; font-size: 0.8rem; text-align: center; }
         .teste-sucesso { background: #2F80ED10; border: 1px solid #2F80ED; padding: 10px; border-radius: 16px; margin-top: 12px; font-size: 0.8rem; }
+        .chat-ia { background: #F8F9FC; border-radius: 20px; padding: 16px; margin-bottom: 16px; }
+        .chat-pergunta { background: #2F80ED; color: white; padding: 12px; border-radius: 20px; margin: 8px 0; max-width: 85%; align-self: flex-end; }
+        .chat-resposta { background: #F5F7FA; padding: 12px; border-radius: 20px; margin: 8px 0; max-width: 85%; }
         @media (max-width: 500px) { .form-grid { grid-template-columns: 1fr; } }
     </style>
 </head>
@@ -58,13 +62,14 @@
 <div class="app-container">
     <div class="app-header">
         <h1>💊 Dose Inteligente</h1>
-        <p>IA Gemini 2.5 Flash • Bluetooth HC-06 • Alarmes</p>
+        <p>IA Gemini • Bluetooth HC-06 • Alarmes</p>
         <div class="aviso-permanente">⚠️ Este aplicativo não substitui orientação médica</div>
     </div>
 
     <div class="tab-bar">
         <button class="tab active" data-tab="inicio">Início</button>
         <button class="tab" data-tab="medicamentos">Medicamentos</button>
+        <button class="tab" data-tab="explorar">Explorar IA</button>
         <button class="tab" data-tab="config">Configurar</button>
     </div>
 
@@ -90,11 +95,22 @@
             <div class="card-title">➕ Cadastrar medicamento(s)</div>
             <div id="medFormList"></div>
             <button id="addMedButton" class="btn-outline">+ Adicionar outro</button>
-            <button id="continueAnalysisButton">Continuar → Análise com IA</button>
+            <button id="continueAnalysisButton">📊 Analisar medicamentos</button>
         </div>
         <div class="card">
             <div class="card-title">📋 Seus medicamentos</div>
             <div id="medList"></div>
+        </div>
+    </div>
+
+    <div id="explorar" class="page">
+        <div class="card">
+            <div class="card-title">🤖 Pergunte para a IA</div>
+            <textarea id="perguntaIA" rows="3" placeholder="Ex: O que é bom para dor de cabeça? Qual a diferença entre dipirona e paracetamol?" style="resize: none;"></textarea>
+            <button id="btnPerguntarIA" class="btn-ia">🔍 Perguntar</button>
+            <div id="respostaIA" class="chat-ia" style="margin-top: 16px; min-height: 150px;">
+                💡 As respostas da IA aparecerão aqui.
+            </div>
         </div>
     </div>
 
@@ -167,6 +183,8 @@
 Use apenas informações factuais e seguras. Responda em português.`;
         } else if (tipo === "detalhes") {
             fullPrompt = `Para o medicamento "${prompt}", forneça informações detalhadas e organizadas em tópicos (use marcadores -). Inclua: mecanismo de ação, interações medicamentosas, doses típicas, armazenamento, superdosagem. Seja completo e bem estruturado.`;
+        } else if (tipo === "pergunta") {
+            fullPrompt = `Responda em português, de forma clara, segura e educativa: ${prompt}`;
         } else {
             fullPrompt = `Responda em português, de forma clara e segura, organizada em tópicos simples: ${prompt}`;
         }
@@ -251,6 +269,30 @@ Use apenas informações factuais e seguras. Responda em português.`;
         document.getElementById("simulacaoBtMsg").innerHTML = "🔧 Modo simulação ativado. Os comandos serão simulados na tela.";
         setTimeout(() => document.getElementById("simulacaoBtMsg").innerHTML = "", 4000);
     };
+
+    // ==============================================================
+    // 🤖 PERGUNTAR PARA IA (Chat)
+    // ==============================================================
+    document.getElementById("btnPerguntarIA").onclick = async () => {
+        const pergunta = document.getElementById("perguntaIA").value.trim();
+        if (!pergunta) {
+            alert("Digite uma pergunta!");
+            return;
+        }
+        
+        const divResposta = document.getElementById("respostaIA");
+        divResposta.innerHTML = "🤔 Pensando... Aguarde alguns segundos...";
+        
+        const resposta = await callGemini(pergunta, "pergunta");
+        divResposta.innerHTML = formatarTexto(resposta);
+    };
+    
+    // Permitir Ctrl+Enter no textarea
+    document.getElementById("perguntaIA").addEventListener("keydown", (e) => {
+        if (e.ctrlKey && e.key === "Enter") {
+            document.getElementById("btnPerguntarIA").click();
+        }
+    });
 
     // ==============================================================
     // 📊 DADOS GLOBAIS
