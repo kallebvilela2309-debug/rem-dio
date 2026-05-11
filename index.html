@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>Dose Inteligente - Modo Teste (sem IA)</title>
+    <title>Dose Inteligente - Teste Completo</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -30,7 +30,7 @@
         button.btn-outline { background: transparent; border: 1px solid #2F80ED; color: #2F80ED; }
         button.btn-danger { background: #EB5757; }
         .schedule-item { background: #F5F7FA; border-radius: 20px; padding: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
-        .checkbox-tomado { width: 24px; height: 24px; accent-color: #2F80ED; }
+        .checkbox-tomado { width: 24px; height: 24px; accent-color: #2F80ED; cursor: pointer; }
         .stats-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 12px; text-align: center; }
         .stat-card { background: #F5F7FA; border-radius: 20px; padding: 12px; }
         .stat-number { font-size: 2rem; font-weight: 800; color: #2F80ED; }
@@ -52,6 +52,7 @@
         .btn-grande { background: #2F80ED; font-size: 1.3rem; padding: 16px; margin: 16px 0; }
         .btn-nao-tomar { background: #A0AAB5; }
         .status-bluetooth { background: #E8F0FE; padding: 8px; border-radius: 20px; margin-top: 8px; font-size: 0.8rem; text-align: center; }
+        .teste-sucesso { background: #2F80ED10; border: 1px solid #2F80ED; padding: 10px; border-radius: 16px; margin-top: 12px; font-size: 0.8rem; }
         @media (max-width: 500px) { .form-grid { grid-template-columns: 1fr; } }
     </style>
 </head>
@@ -59,8 +60,8 @@
 <div class="app-container">
     <div class="app-header">
         <h1>💊 Dose Inteligente <span class="modo-teste-badge">MODO TESTE</span></h1>
-        <p>Bluetooth • Alarmes • Simulação (sem IA)</p>
-        <div class="aviso-permanente">⚠️ Este aplicativo não substitui orientação médica</div>
+        <p>Bluetooth HC-06 • Alarmes • Simulação</p>
+        <div class="aviso-permanente">⚠️ Aplicativo de teste – não substitui orientação médica</div>
     </div>
 
     <div class="tab-bar">
@@ -83,16 +84,14 @@
 
     <div id="config" class="page">
         <div class="card">
-            <div class="card-title">🔷 Bluetooth HC-05/HC-06</div>
-            <input type="text" id="deviceNameFilter" placeholder="Nome do dispositivo (opcional)" value="HC-05">
-            <button id="conectarBluetoothBtn">🔌 Conectar ao dispositivo</button>
+            <div class="card-title">🔷 Bluetooth HC-06</div>
+            <input type="text" id="deviceNameFilter" placeholder="Nome do dispositivo (ex: HC-06)" value="HC-06">
+            <button id="conectarBluetoothBtn">🔌 Conectar ao HC-06</button>
             <div id="statusBluetooth" class="status-bluetooth">Desconectado</div>
-            <button id="testarMotorBtn" class="btn-outline" style="margin-top:12px;">⚙️ Testar motor (enviar 'T')</button>
-            <div class="aviso-permanente" style="margin-top:12px;">🔹 Conecte-se a qualquer dispositivo Bluetooth para teste. O comando 'T' será enviado se conectado.</div>
-        </div>
-        <div class="card">
-            <div class="card-title">👥 Modo responsável</div>
-            <div><p><strong>Código de pareamento:</strong> <span id="pairingCode">---</span></p><button id="gerarCodigoBtn">Gerar novo código</button><button id="copiarCodigoBtn">Copiar código</button><hr style="margin:16px 0"><div id="modoResponsavelBox" style="display:none;"><input type="text" id="codigoResponsavel" placeholder="Código do dependente"><button id="parearBtn">Parear</button><div id="notificacoesResponsavel"></div></div><button id="toggleModoBtn" class="btn-outline">Ativar modo responsável</button></div>
+            <button id="testarMotorBtn" class="btn-outline" style="margin-top:12px;">⚙️ Testar motor (enviar 'M')</button>
+            <button id="simularBtBtn" class="btn-outline" style="margin-top:8px;">🔄 Modo simulação (sem Bluetooth)</button>
+            <div class="teste-sucesso" id="simulacaoBtMsg"></div>
+            <div class="aviso-permanente" style="margin-top:12px;">🔹 Para teste real, conecte-se ao HC-06. O comando 'M' aciona o motor.</div>
         </div>
     </div>
 
@@ -109,9 +108,9 @@
 
 <script>
     // --------------------------------------------------------------
-    // 1. SIMULAÇÃO DE IA (SEM API)
+    // 1. SIMULAÇÃO (substitui a IA)
     // --------------------------------------------------------------
-    function formatarTextoIA(texto) {
+    function formatarTexto(texto) {
         if (!texto) return "";
         let html = texto.replace(/\n/g, '<br>');
         html = html.replace(/^- (.*)/gm, '• $1<br>');
@@ -119,52 +118,73 @@
         return html;
     }
 
-    function simularGemini(prompt, tipo = "geral") {
+    function simularResposta(prompt, tipo) {
         return new Promise(resolve => {
             setTimeout(() => {
                 if (tipo === "interacoes") {
                     resolve(`- Interação perigosa? Não\n- Explicação: Não há interações graves conhecidas entre estes medicamentos.\n- Solução: Mantenha os horários conforme recomendado.`);
-                } else if (tipo === "resumoObrigatorio") {
-                    resolve(`- Nome do medicamento: ${prompt}\n- Indicação: Tratamento de dores e febres\n- Contraindicação: Hipersensibilidade aos componentes\n- Recomendações de uso: Tomar com água, respeitar intervalo de 6h\n- Possíveis efeitos colaterais: Náusea, tontura, reações alérgicas raras`);
-                } else if (tipo === "detalhesOrganizado") {
-                    resolve(`- **Mecanismo de ação**: Atua no sistema nervoso central\n- **Interações**: Evite com álcool\n- **Doses típicas**: 500mg a cada 6h\n- **Armazenamento**: Em local seco e arejado\n- **Superdosagem**: Procure atendimento médico imediatamente`);
-                } else if (tipo === "sugestao") {
-                    resolve(`Dose sugerida: 500mg a cada 6 horas. Horário ideal: 08:00, 14:00, 20:00.`);
+                } else if (tipo === "resumo") {
+                    resolve(`- Nome: ${prompt}\n- Indicação: Tratamento de dores e febres\n- Contraindicação: Hipersensibilidade aos componentes\n- Recomendações: Tomar com água, respeitar intervalo de 6h\n- Efeitos colaterais: Náusea, tontura, reações alérgicas raras`);
+                } else if (tipo === "detalhes") {
+                    resolve(`- Mecanismo de ação: Atua no sistema nervoso central\n- Interações: Evite com álcool\n- Doses típicas: 500mg a cada 6h\n- Armazenamento: Local seco e arejado\n- Superdosagem: Procure atendimento médico`);
                 } else {
-                    resolve(`**Resposta simulada**: Sobre "${prompt}", consulte um profissional de saúde para orientação adequada.`);
+                    resolve(`**Resposta informativa**: Sobre "${prompt}", consulte sempre um profissional de saúde. Este é um aplicativo de apoio, não substitui orientação médica.`);
                 }
-            }, 500);
+            }, 300);
         });
     }
 
     // --------------------------------------------------------------
-    // 2. BLUETOOTH
+    // 2. BLUETOOTH HC-06 (com simulação)
     // --------------------------------------------------------------
     let bluetoothCharacteristic = null;
+    let modoSimulacaoBt = false;
+    
     async function conectarBluetooth() {
+        if (modoSimulacaoBt) {
+            document.getElementById("statusBluetooth").innerHTML = "✅ MODO SIMULAÇÃO ATIVO";
+            return;
+        }
         try {
             const device = await navigator.bluetooth.requestDevice({
-                filters: [{ services: ["0000ffe0-0000-1000-8000-00805f9b34fb"] }],
+                filters: [{ namePrefix: document.getElementById("deviceNameFilter").value || "HC" }],
                 optionalServices: ["0000ffe0-0000-1000-8000-00805f9b34fb"]
             });
             const server = await device.gatt.connect();
             const service = await server.getPrimaryService("0000ffe0-0000-1000-8000-00805f9b34fb");
             bluetoothCharacteristic = await service.getCharacteristic("0000ffe1-0000-1000-8000-00805f9b34fb");
             document.getElementById("statusBluetooth").innerHTML = `✅ Conectado a ${device.name}`;
-            alert("Conectado!");
+            alert("Conectado ao HC-06!");
         } catch(e) {
             console.error(e);
             document.getElementById("statusBluetooth").innerHTML = "❌ Falha na conexão";
+            alert("Não foi possível conectar. Verifique se o HC-06 está ligado e pareado.");
         }
     }
-    async function enviarComandoBluetooth(cmd) {
-        if (!bluetoothCharacteristic) return false;
+    
+    async function enviarComando(cmd) {
+        if (modoSimulacaoBt) {
+            document.getElementById("simulacaoBtMsg").innerHTML = `🚀 Simulação: comando '${cmd}' enviado para o motor!`;
+            setTimeout(() => document.getElementById("simulacaoBtMsg").innerHTML = "", 3000);
+            return true;
+        }
+        if (!bluetoothCharacteristic) {
+            alert("Bluetooth não conectado. Conecte-se ao HC-06 primeiro.");
+            return false;
+        }
         try {
             await bluetoothCharacteristic.writeValue(new TextEncoder().encode(cmd));
             console.log(`Comando enviado: ${cmd}`);
             return true;
         } catch(e) { return false; }
     }
+    
+    document.getElementById("simularBtBtn").onclick = () => {
+        modoSimulacaoBt = true;
+        document.getElementById("statusBluetooth").innerHTML = "✅ MODO SIMULAÇÃO ATIVO";
+        document.getElementById("simulacaoBtMsg").innerHTML = "🔧 Modo simulação ativado. Os comandos serão simulados na tela.";
+        setTimeout(() => document.getElementById("simulacaoBtMsg").innerHTML = "", 4000);
+    };
 
     // --------------------------------------------------------------
     // 3. DADOS GLOBAIS
@@ -176,23 +196,21 @@
     let alarmesAtivos = new Map();
     let audioCtx = null;
     let grafico = null;
-    let pairCode = "";
 
     function carregarDados() {
-        medicamentos = JSON.parse(localStorage.getItem("dose_meds_test") || "[]");
-        eventosPendentes = JSON.parse(localStorage.getItem("dose_eventos_test") || "[]");
-        historico = JSON.parse(localStorage.getItem("dose_hist_test") || "[]");
-        pairCode = localStorage.getItem("pairing_code_test") || "";
-        document.getElementById("pairingCode").innerText = pairCode || "Gerar código";
+        medicamentos = JSON.parse(localStorage.getItem("dose_meds_final") || "[]");
+        eventosPendentes = JSON.parse(localStorage.getItem("dose_eventos_final") || "[]");
+        historico = JSON.parse(localStorage.getItem("dose_hist_final") || "[]");
         if (medicamentos.length) nextId = Math.max(...medicamentos.map(m => m.id), 0) + 1;
         atualizarTudo();
         reagendarAlarmes();
         renderizarListaMedicamentos();
     }
+    
     function salvarDados() {
-        localStorage.setItem("dose_meds_test", JSON.stringify(medicamentos));
-        localStorage.setItem("dose_eventos_test", JSON.stringify(eventosPendentes));
-        localStorage.setItem("dose_hist_test", JSON.stringify(historico));
+        localStorage.setItem("dose_meds_final", JSON.stringify(medicamentos));
+        localStorage.setItem("dose_eventos_final", JSON.stringify(eventosPendentes));
+        localStorage.setItem("dose_hist_final", JSON.stringify(historico));
         atualizarTudo();
         renderizarListaMedicamentos();
     }
@@ -201,20 +219,20 @@
         historico.push({ medicamentoId: medId, horario, status, timestamp: Date.now() });
         salvarDados();
     }
+    
     function marcarTomado(eventoId) {
         const ev = eventosPendentes.find(e => e.id === eventoId);
         if (ev && !ev.tomado) {
             ev.tomado = true;
             registrarHistorico(ev.medicamentoId, ev.horario, "tomado");
-            atualizarTudo();
         }
     }
+    
     function marcarIgnorado(eventoId) {
         const ev = eventosPendentes.find(e => e.id === eventoId);
         if (ev && !ev.tomado) {
             ev.tomado = true;
             registrarHistorico(ev.medicamentoId, ev.horario, "ignorado");
-            atualizarTudo();
         }
     }
 
@@ -241,8 +259,8 @@
             document.body.appendChild(modal);
             document.getElementById("fecharModalBtn").onclick = () => modal.classList.remove("show");
         }
-        modal.querySelector(".resumo").innerHTML = `<strong>📌 Resumo</strong><br>${formatarTextoIA(resumo)}`;
-        modal.querySelector(".detalhes").innerHTML = `<strong>🔬 Detalhes</strong><br>${formatarTextoIA(detalhes)}`;
+        modal.querySelector(".resumo").innerHTML = `<strong>📌 Resumo</strong><br>${formatarTexto(resumo)}`;
+        modal.querySelector(".detalhes").innerHTML = `<strong>🔬 Detalhes</strong><br>${formatarTexto(detalhes)}`;
         modal.classList.add("show");
     }
 
@@ -254,7 +272,7 @@
         modal.innerHTML = `
             <h2>💊 ${med.nome}</h2>
             <p style="font-size:1.2rem;">Horário: ${evento.horario}</p>
-            <div class="resumo-obrigatorio">${formatarTextoIA(med.resumoObrigatorio || "Carregando...")}</div>
+            <div class="resumo-obrigatorio">${formatarTexto(med.resumo || "Siga orientação médica.")}</div>
             <button class="btn-grande" id="tomarAgoraBtn">✅ TOMAR AGORA</button>
             <button id="naoTomarBtn" class="btn-nao-tomar">❌ Não tomar</button>
             <button id="lerMaisBtn" class="btn-outline" style="margin-top:12px;">📖 Ler mais</button>
@@ -265,10 +283,10 @@
             modal.classList.remove("show");
             setTimeout(() => modal.remove(), 300);
         };
+        
         document.getElementById("tomarAgoraBtn").onclick = async () => {
             marcarTomado(evento.id);
-            if (med.comandoArduino) await enviarComandoBluetooth(med.comandoArduino);
-            if (confirm("Notificar responsável?")) notificarResponsavel(med.nome, evento.horario);
+            if (med.comando) await enviarComando(med.comando);
             fechar();
         };
         document.getElementById("naoTomarBtn").onclick = () => {
@@ -276,14 +294,9 @@
             fechar();
         };
         document.getElementById("lerMaisBtn").onclick = async () => {
-            let detalhes = med.detalhesIA || "Detalhes do medicamento: Siga orientação médica. Consulte a bula para mais informações.";
-            mostrarModalLerMais(med.resumoObrigatorio || "Resumo indisponível", detalhes);
+            let detalhes = med.detalhes || await simularResposta(med.nome, "detalhes");
+            mostrarModalLerMais(med.resumo || "Informações não disponíveis", detalhes);
         };
-    }
-
-    function notificarResponsavel(medNome, horario) {
-        if (!pairCode) return;
-        alert(`[SIMULAÇÃO] Notificando responsável: ${medNome} tomado às ${horario}`);
     }
 
     function reagendarAlarmes() {
@@ -307,7 +320,7 @@
         }
     }
 
-    function gerarHorariosPorIntervalo(intervalo, inicio = "08:00") {
+    function gerarHorarios(intervalo, inicio = "08:00") {
         let horarios = [];
         let [h, m] = inicio.split(":").map(Number);
         let mins = h * 60 + m;
@@ -346,16 +359,18 @@
         const checklistDiv = document.getElementById("checklistContainer");
         checklistDiv.innerHTML = eventosHoje.length ? eventosHoje.map(e => {
             const med = medicamentos.find(m => m.id === e.medicamentoId);
-            return `<div class="schedule-item"><div><strong>${med?.nome}</strong> - ${e.horario}</div><div><input type="checkbox" class="checkbox-tomado" data-id="${e.id}"></div></div>`;
+            return `<div class="schedule-item" data-id="${e.id}">
+                        <div><strong>${med?.nome}</strong> - ${e.horario}</div>
+                        <div><input type="checkbox" class="checkbox-tomado" data-id="${e.id}"></div>
+                    </div>`;
         }).join('') : "<div style='padding:16px;text-align:center'>✅ Nada pendente hoje</div>";
         
+        // ✅ CORREÇÃO: evento de clique para cada checkbox
         document.querySelectorAll(".checkbox-tomado").forEach(cb => {
-            cb.onclick = (e) => {
-                marcarTomado(parseInt(cb.dataset.id));
-                atualizarTudo();
-            };
+            cb.removeEventListener("click", handleCheckbox);
+            cb.addEventListener("click", handleCheckbox);
         });
-
+        
         const futuros = eventosPendentes.filter(e => !e.tomado && new Date(e.dataReferencia) > new Date()).slice(0, 5);
         const proximosDiv = document.getElementById("proximosContainer");
         proximosDiv.innerHTML = futuros.length ? futuros.map(e => {
@@ -384,13 +399,19 @@
         const ctx = document.getElementById("graficoAdesao").getContext("2d");
         grafico = new Chart(ctx, { type: 'line', data: { labels, datasets: [{ label: 'Tomados', data: dados, borderColor: '#2F80ED', tension: 0.3 }] } });
     }
+    
+    function handleCheckbox(e) {
+        const id = parseInt(e.target.dataset.id);
+        marcarTomado(id);
+        atualizarTudo();
+    }
 
     function renderizarListaMedicamentos() {
         const container = document.getElementById("medList");
         if (!medicamentos.length) { container.innerHTML = "<div style='text-align:center; padding:20px'>Nenhum medicamento cadastrado</div>"; return; }
         container.innerHTML = medicamentos.map(med => `
             <div class="schedule-item">
-                <div><strong>${med.nome}</strong> ${med.dosagem ? `(${med.dosagem})` : ''}<br><span style="font-size:0.7rem;">${med.horarios.join(", ")}</span><br>🔌 Comando: ${med.comandoArduino || "nenhum"}</div>
+                <div><strong>${med.nome}</strong> ${med.dosagem ? `(${med.dosagem})` : ''}<br><span style="font-size:0.7rem;">${med.horarios.join(", ")}</span><br>🔌 Comando: ${med.comando || "nenhum"}</div>
                 <button class="btn-danger" style="width:auto; padding:6px 12px;" onclick="removerMed(${med.id})">Remover</button>
             </div>
         `).join('');
@@ -407,12 +428,12 @@
         const div = document.createElement("div");
         div.className = "med-item";
         div.innerHTML = `
-            <div class="form-grid"><input type="text" placeholder="Nome do medicamento *" class="medNome"><input type="text" placeholder="Dosagem (ex: 500mg)" class="medDosagem"></div>
+            <div class="form-grid"><input type="text" placeholder="Nome *" class="medNome"><input type="text" placeholder="Dosagem" class="medDosagem"></div>
             <input type="text" placeholder="Horários (ex: 08:00,14:00)" class="medHorarios">
             <select class="medIntervalo"><option value="0">-- Intervalo --</option><option value="4">4h</option><option value="6">6h</option><option value="8">8h</option><option value="12">12h</option><option value="24">1x/dia</option></select>
             <div class="weekdays"><span data-day="0" class="weekday-btn">Dom</span><span data-day="1" class="weekday-btn">Seg</span><span data-day="2" class="weekday-btn">Ter</span><span data-day="3" class="weekday-btn">Qua</span><span data-day="4" class="weekday-btn">Qui</span><span data-day="5" class="weekday-btn">Sex</span><span data-day="6" class="weekday-btn">Sáb</span></div>
-            <input type="text" placeholder="Comando Bluetooth (ex: A, B, T)" class="medComando" maxlength="1">
-            <button class="remove-form-btn" style="background:#EB5757; margin-top:8px;">Remover este medicamento</button>
+            <input type="text" placeholder="Comando HC-06 (ex: A, M)" class="medComando" maxlength="1">
+            <button class="remove-form-btn" style="background:#EB5757; margin-top:8px;">Remover</button>
         `;
         div.querySelectorAll(".weekday-btn").forEach(btn => btn.onclick = e => { e.stopPropagation(); btn.classList.toggle("active"); });
         div.querySelector(".remove-form-btn").onclick = () => div.remove();
@@ -431,63 +452,45 @@
             const dosagem = form.querySelector(".medDosagem").value.trim();
             let horarios = form.querySelector(".medHorarios").value.trim().split(",").map(h => h.trim()).filter(h => h);
             const intervalo = parseInt(form.querySelector(".medIntervalo").value);
-            if (!horarios.length && intervalo) horarios = gerarHorariosPorIntervalo(intervalo);
+            if (!horarios.length && intervalo) horarios = gerarHorarios(intervalo);
             const dias = Array.from(form.querySelectorAll(".weekday-btn.active")).map(btn => parseInt(btn.dataset.day));
-            const comandoArduino = form.querySelector(".medComando").value.trim();
-            medicamentosTemp.push({ nome, dosagem, horarios: horarios.length ? horarios : ["08:00"], diasAtivos: dias.length ? dias : [0,1,2,3,4,5,6], comandoArduino });
+            const comando = form.querySelector(".medComando").value.trim();
+            medicamentosTemp.push({ nome, dosagem, horarios: horarios.length ? horarios : ["08:00"], diasAtivos: dias.length ? dias : [0,1,2,3,4,5,6], comando });
         }
         if (!medicamentosTemp.length) { alert("Nenhum medicamento válido"); return; }
         const analysisScreen = document.getElementById("analysisScreen");
         const analysisContent = document.getElementById("analysisContent");
         analysisScreen.classList.add("active");
-        analysisContent.innerHTML = "<div style='text-align:center'>⏳ Analisando medicamentos...</div>";
+        analysisContent.innerHTML = "<div style='text-align:center'>⏳ Analisando...</div>";
 
-        const nomes = medicamentosTemp.map(m => m.nome).join(", ");
-        const interacaoResposta = await simularGemini(nomes, "interacoes");
-        let temInteracao = interacaoResposta.toLowerCase().includes("sim") || interacaoResposta.toLowerCase().includes("perigosa");
-        let explicacao = interacaoResposta.substring(0, 200);
-        let solucao = interacaoResposta.includes("Solução") ? interacaoResposta.split("Solução")[1] : "";
-
+        const interacaoResposta = await simularResposta(medicamentosTemp.map(m => m.nome).join(", "), "interacoes");
+        let temInteracao = interacaoResposta.toLowerCase().includes("sim");
         let html = `<div class="${temInteracao ? 'interaction-alert' : 'interaction-alert interaction-safe'}">
-                        ${temInteracao ? "⚠️ Atenção: Esses medicamentos possuem interação" : "✅ Nenhuma interação perigosa encontrada"}
-                        <p>${explicacao}</p>
-                        ${temInteracao && solucao ? `<p><strong>Solução:</strong> ${solucao}</p>` : ""}
+                        ${temInteracao ? "⚠️ Atenção: Possível interação" : "✅ Nenhuma interação perigosa encontrada"}
+                        <p>${interacaoResposta}</p>
                     </div>`;
         for (let med of medicamentosTemp) {
-            const resumoObrigatorio = await simularGemini(med.nome, "resumoObrigatorio");
-            const faltando = [];
-            if (!med.dosagem) faltando.push("dose");
-            if (!med.horarios || med.horarios.length === 0) faltando.push("horários");
-            let sugestaoHtml = "";
-            if (faltando.length) {
-                const sugestaoIA = await simularGemini({ nome: med.nome, faltando: faltando.join(", ") }, "sugestao");
-                sugestaoHtml = `<div class="suggested-badge">🔵 O sistema sugere: ${sugestaoIA}</div>`;
-            }
+            const resumo = await simularResposta(med.nome, "resumo");
             html += `<div class="med-analysis-card">
-                        <strong style="font-size:1.2rem;">💊 ${med.nome}</strong> ${med.dosagem ? `(${med.dosagem})` : ''}
-                        ${sugestaoHtml}
-                        <div class="resumo-obrigatorio">${formatarTextoIA(resumoObrigatorio)}</div>
-                        <div class="read-more" data-med="${med.nome}">📖 Ler mais</div>
+                        <strong>💊 ${med.nome}</strong> ${med.dosagem ? `(${med.dosagem})` : ''}
+                        <div class="resumo-obrigatorio">${formatarTexto(resumo)}</div>
+                        <div class="read-more" data-med="${med.nome}" data-nome="${med.nome}">📖 Ler mais</div>
                         <div class="detailed-info" id="detalhes-${med.nome.replace(/ /g, '')}"></div>
                     </div>`;
         }
         analysisContent.innerHTML = html;
         document.querySelectorAll(".read-more").forEach(el => {
             el.onclick = async () => {
-                const nome = el.dataset.med;
+                const nome = el.dataset.nome;
                 const detalhesDiv = document.getElementById(`detalhes-${nome.replace(/ /g, '')}`);
-                if (detalhesDiv.style.display === 'block') {
-                    detalhesDiv.style.display = 'none';
-                    return;
-                }
-                detalhesDiv.innerHTML = "⏳ Carregando detalhes...";
-                const detalhes = await simularGemini(nome, "detalhesOrganizado");
-                detalhesDiv.innerHTML = formatarTextoIA(detalhes);
+                if (detalhesDiv.style.display === 'block') { detalhesDiv.style.display = 'none'; return; }
+                const detalhes = await simularResposta(nome, "detalhes");
+                detalhesDiv.innerHTML = formatarTexto(detalhes);
                 detalhesDiv.style.display = 'block';
             };
         });
     };
-
+    
     document.getElementById("closeAnalysisBtn").onclick = () => document.getElementById("analysisScreen").classList.remove("active");
     document.getElementById("reviseCadastroBtn").onclick = () => document.getElementById("analysisScreen").classList.remove("active");
     document.getElementById("confirmTreatmentBtn").onclick = async () => {
@@ -498,13 +501,13 @@
             const dosagem = form.querySelector(".medDosagem").value.trim();
             let horarios = form.querySelector(".medHorarios").value.trim().split(",").map(h => h.trim()).filter(h => h);
             const intervalo = parseInt(form.querySelector(".medIntervalo").value);
-            if (!horarios.length && intervalo) horarios = gerarHorariosPorIntervalo(intervalo);
+            if (!horarios.length && intervalo) horarios = gerarHorarios(intervalo);
             const dias = Array.from(form.querySelectorAll(".weekday-btn.active")).map(btn => parseInt(btn.dataset.day));
-            const comandoArduino = form.querySelector(".medComando").value.trim();
-            const resumoObrigatorio = await simularGemini(nome, "resumoObrigatorio");
+            const comando = form.querySelector(".medComando").value.trim();
+            const resumo = await simularResposta(nome, "resumo");
             const novoMed = {
                 id: nextId++, nome, dosagem, horarios: horarios.length ? horarios : ["08:00"], diasAtivos: dias.length ? dias : [0,1,2,3,4,5,6],
-                comandoArduino, resumoObrigatorio, detalhesIA: "Informações detalhadas do medicamento. Consulte a bula oficial."
+                comando, resumo, detalhes: ""
             };
             medicamentos.push(novoMed);
             gerarEventos(novoMed);
@@ -520,38 +523,17 @@
         const pergunta = document.getElementById("iaPergunta").value.trim();
         if (!pergunta) return;
         const div = document.getElementById("iaResposta");
-        div.innerHTML = "⏳ Consultando base de dados...";
-        const resposta = await simularGemini(pergunta, "geral");
-        div.innerHTML = formatarTextoIA(resposta);
+        div.innerHTML = "⏳ Consultando...";
+        const resposta = await simularResposta(pergunta, "geral");
+        div.innerHTML = formatarTexto(resposta);
     };
 
     document.getElementById("conectarBluetoothBtn").onclick = conectarBluetooth;
     document.getElementById("testarMotorBtn").onclick = async () => {
-        if (!bluetoothCharacteristic) { alert("Conecte-se primeiro."); return; }
-        await enviarComandoBluetooth("T");
-        alert("Comando 'T' enviado.");
-    };
-    document.getElementById("gerarCodigoBtn").onclick = () => {
-        pairCode = Math.random().toString(36).substring(2, 10).toUpperCase();
-        localStorage.setItem("pairing_code_test", pairCode);
-        document.getElementById("pairingCode").innerText = pairCode;
-    };
-    document.getElementById("copiarCodigoBtn").onclick = () => {
-        navigator.clipboard.writeText(pairCode);
-        alert("Código copiado!");
-    };
-    let modoResponsavel = false;
-    document.getElementById("toggleModoBtn").onclick = () => {
-        modoResponsavel = !modoResponsavel;
-        document.getElementById("modoResponsavelBox").style.display = modoResponsavel ? "block" : "none";
-    };
-    document.getElementById("parearBtn").onclick = async () => {
-        const codigo = document.getElementById("codigoResponsavel").value.trim();
-        if (!codigo) return;
-        pairCode = codigo;
-        localStorage.setItem("pairing_code_test", pairCode);
-        document.getElementById("pairingCode").innerText = pairCode;
-        alert("Pareado! Agora você receberá notificações.");
+        await enviarComando("M");
+        if (!modoSimulacaoBt && !bluetoothCharacteristic) {
+            alert("Conecte-se ao HC-06 primeiro ou ative o modo simulação.");
+        }
     };
 
     document.querySelectorAll(".tab").forEach(tab => {
