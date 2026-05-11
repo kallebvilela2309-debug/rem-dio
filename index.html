@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>Dose Inteligente - IA + Bluetooth</title>
+    <title>Dose Inteligente - Modo Teste (sem IA)</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -12,6 +12,7 @@
         .app-header { background: white; padding: 20px 20px 12px; border-bottom: 1px solid #E0E0E0; }
         .app-header h1 { font-size: 1.8rem; color: #2F80ED; }
         .app-header p { font-size: 0.85rem; color: #828282; margin-top: 4px; }
+        .modo-teste-badge { background: #F59E0B; color: white; padding: 2px 8px; border-radius: 20px; font-size: 0.7rem; margin-left: 8px; }
         .aviso-permanente { background: #FFF3E0; padding: 8px 12px; font-size: 0.7rem; text-align: center; color: #ED6A2E; border-radius: 20px; margin-top: 10px; }
         .tab-bar { display: flex; background: white; border-top: 1px solid #E0E0E0; border-bottom: 1px solid #E0E0E0; }
         .tab { flex: 1; text-align: center; padding: 12px 0; font-weight: 600; color: #828282; cursor: pointer; background: white; border: none; font-size: 1rem; }
@@ -57,8 +58,8 @@
 <body>
 <div class="app-container">
     <div class="app-header">
-        <h1>💊 Dose Inteligente</h1>
-        <p>IA • Bluetooth • Alarmes</p>
+        <h1>💊 Dose Inteligente <span class="modo-teste-badge">MODO TESTE</span></h1>
+        <p>Bluetooth • Alarmes • Simulação (sem IA)</p>
         <div class="aviso-permanente">⚠️ Este aplicativo não substitui orientação médica</div>
     </div>
 
@@ -66,7 +67,7 @@
         <button class="tab active" data-tab="inicio">Início</button>
         <button class="tab" data-tab="medicamentos">Medicamentos</button>
         <button class="tab" data-tab="config">Configurar</button>
-        <button class="tab" data-tab="explorar">Explorar IA</button>
+        <button class="tab" data-tab="explorar">Explorar</button>
     </div>
 
     <div id="inicio" class="page active">
@@ -76,7 +77,7 @@
     </div>
 
     <div id="medicamentos" class="page">
-        <div class="card"><div class="card-title">➕ Cadastrar medicamento(s)</div><div id="medFormList"></div><button id="addMedButton" class="btn-outline">+ Adicionar outro</button><button id="continueAnalysisButton">Continuar → Análise com IA</button></div>
+        <div class="card"><div class="card-title">➕ Cadastrar medicamento(s)</div><div id="medFormList"></div><button id="addMedButton" class="btn-outline">+ Adicionar outro</button><button id="continueAnalysisButton">Continuar → Análise (simulada)</button></div>
         <div class="card"><div class="card-title">📋 Seus medicamentos</div><div id="medList"></div></div>
     </div>
 
@@ -96,23 +97,20 @@
     </div>
 
     <div id="explorar" class="page">
-        <div class="card"><div class="card-title">🔍 Tire dúvidas com IA</div><input type="text" id="iaPergunta" placeholder="Ex: O que é bom para dor de cabeça?"><button id="iaPerguntarBtn">🤖 Perguntar</button><div id="iaResposta" style="background: #F5F7FA; padding: 16px; border-radius: 24px; margin-top: 16px;"></div></div>
+        <div class="card"><div class="card-title">🔍 Informações (Simulação)</div><input type="text" id="iaPergunta" placeholder="Ex: O que é bom para dor de cabeça?"><button id="iaPerguntarBtn">🔍 Pesquisar</button><div id="iaResposta" style="background: #F5F7FA; padding: 16px; border-radius: 24px; margin-top: 16px;"></div></div>
     </div>
 </div>
 
 <div id="analysisScreen" class="analysis-screen">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;"><h2>🧠 Análise da IA</h2><button id="closeAnalysisBtn" class="btn-outline" style="width: auto; padding: 8px 16px;">Fechar</button></div>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;"><h2>🧠 Análise (Simulada)</h2><button id="closeAnalysisBtn" class="btn-outline" style="width: auto; padding: 8px 16px;">Fechar</button></div>
     <div id="analysisContent"></div>
     <div style="display: flex; gap: 12px; margin: 30px 0 50px;"><button id="reviseCadastroBtn" class="btn-outline" style="flex:1">✏️ Revisar cadastro</button><button id="confirmTreatmentBtn" style="flex:1; background:#2F80ED;">✅ Confirmar e iniciar</button></div>
 </div>
 
 <script>
-   // --------------------------------------------------------------
-// 1. CONFIGURAÇÃO DA IA GEMINI
-// --------------------------------------------------------------
-const API_KEY = "AIzaSyDGBGbL9goex5cNukWKNM2iMXwRdO4cPCo";
-const MODELO = "gemini-1.5-flash";  // ✅ 60 requisições por minuto, 6x mais que 2.5-flash
-    
+    // --------------------------------------------------------------
+    // 1. SIMULAÇÃO DE IA (SEM API)
+    // --------------------------------------------------------------
     function formatarTextoIA(texto) {
         if (!texto) return "";
         let html = texto.replace(/\n/g, '<br>');
@@ -121,41 +119,22 @@ const MODELO = "gemini-1.5-flash";  // ✅ 60 requisições por minuto, 6x mais 
         return html;
     }
 
-    async function callGemini(prompt, tipo = "geral") {
-        let fullPrompt = "";
-        if (tipo === "interacoes") {
-            fullPrompt = `Analise os seguintes medicamentos: ${prompt}. Responda apenas em português, de forma clara e curta, seguindo este formato:
-- Interação perigosa? (sim/não)
-- Explicação (máximo 2 linhas)
-- Solução (se houver, indique intervalo de horas)`;
-        } else if (tipo === "resumoObrigatorio") {
-            fullPrompt = `Para o medicamento "${prompt}", forneça EXATAMENTE estes 5 tópicos com marcadores (-):
-- Nome do medicamento
-- Indicação
-- Contraindicação
-- Recomendações de uso
-- Possíveis efeitos colaterais
-Use apenas informações factuais e seguras. Responda em português.`;
-        } else if (tipo === "detalhesOrganizado") {
-            fullPrompt = `Para o medicamento "${prompt}", forneça informações detalhadas e organizadas em tópicos (use marcadores -). Inclua: mecanismo de ação, interações medicamentosas, doses típicas, armazenamento, superdosagem. Seja completo e bem estruturado.`;
-        } else if (tipo === "sugestao") {
-            fullPrompt = `Para o medicamento "${prompt.nome}", o usuário não informou: ${prompt.faltando}. Sugira valores razoáveis para dose, frequência e horários. Responda em texto corrido.`;
-        } else {
-            fullPrompt = `Responda em português, de forma clara e segura, organizada em tópicos simples: ${prompt}`;
-        }
-        try {
-            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODELO}:generateContent?key=${API_KEY}`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ contents: [{ parts: [{ text: fullPrompt }] }] })
-            });
-            if (!response.ok) throw new Error(`HTTP ${response.status}`);
-            const data = await response.json();
-            return data.candidates?.[0]?.content?.parts?.[0]?.text || "Sem resposta.";
-        } catch(e) {
-            console.error("Erro na chamada da IA:", e);
-            return `Erro: ${e.message}`;
-        }
+    function simularGemini(prompt, tipo = "geral") {
+        return new Promise(resolve => {
+            setTimeout(() => {
+                if (tipo === "interacoes") {
+                    resolve(`- Interação perigosa? Não\n- Explicação: Não há interações graves conhecidas entre estes medicamentos.\n- Solução: Mantenha os horários conforme recomendado.`);
+                } else if (tipo === "resumoObrigatorio") {
+                    resolve(`- Nome do medicamento: ${prompt}\n- Indicação: Tratamento de dores e febres\n- Contraindicação: Hipersensibilidade aos componentes\n- Recomendações de uso: Tomar com água, respeitar intervalo de 6h\n- Possíveis efeitos colaterais: Náusea, tontura, reações alérgicas raras`);
+                } else if (tipo === "detalhesOrganizado") {
+                    resolve(`- **Mecanismo de ação**: Atua no sistema nervoso central\n- **Interações**: Evite com álcool\n- **Doses típicas**: 500mg a cada 6h\n- **Armazenamento**: Em local seco e arejado\n- **Superdosagem**: Procure atendimento médico imediatamente`);
+                } else if (tipo === "sugestao") {
+                    resolve(`Dose sugerida: 500mg a cada 6 horas. Horário ideal: 08:00, 14:00, 20:00.`);
+                } else {
+                    resolve(`**Resposta simulada**: Sobre "${prompt}", consulte um profissional de saúde para orientação adequada.`);
+                }
+            }, 500);
+        });
     }
 
     // --------------------------------------------------------------
@@ -182,6 +161,7 @@ Use apenas informações factuais e seguras. Responda em português.`;
         if (!bluetoothCharacteristic) return false;
         try {
             await bluetoothCharacteristic.writeValue(new TextEncoder().encode(cmd));
+            console.log(`Comando enviado: ${cmd}`);
             return true;
         } catch(e) { return false; }
     }
@@ -199,10 +179,10 @@ Use apenas informações factuais e seguras. Responda em português.`;
     let pairCode = "";
 
     function carregarDados() {
-        medicamentos = JSON.parse(localStorage.getItem("dose_meds") || "[]");
-        eventosPendentes = JSON.parse(localStorage.getItem("dose_eventos") || "[]");
-        historico = JSON.parse(localStorage.getItem("dose_hist") || "[]");
-        pairCode = localStorage.getItem("pairing_code") || "";
+        medicamentos = JSON.parse(localStorage.getItem("dose_meds_test") || "[]");
+        eventosPendentes = JSON.parse(localStorage.getItem("dose_eventos_test") || "[]");
+        historico = JSON.parse(localStorage.getItem("dose_hist_test") || "[]");
+        pairCode = localStorage.getItem("pairing_code_test") || "";
         document.getElementById("pairingCode").innerText = pairCode || "Gerar código";
         if (medicamentos.length) nextId = Math.max(...medicamentos.map(m => m.id), 0) + 1;
         atualizarTudo();
@@ -210,9 +190,9 @@ Use apenas informações factuais e seguras. Responda em português.`;
         renderizarListaMedicamentos();
     }
     function salvarDados() {
-        localStorage.setItem("dose_meds", JSON.stringify(medicamentos));
-        localStorage.setItem("dose_eventos", JSON.stringify(eventosPendentes));
-        localStorage.setItem("dose_hist", JSON.stringify(historico));
+        localStorage.setItem("dose_meds_test", JSON.stringify(medicamentos));
+        localStorage.setItem("dose_eventos_test", JSON.stringify(eventosPendentes));
+        localStorage.setItem("dose_hist_test", JSON.stringify(historico));
         atualizarTudo();
         renderizarListaMedicamentos();
     }
@@ -269,12 +249,6 @@ Use apenas informações factuais e seguras. Responda em português.`;
     function mostrarAlarme(evento) {
         const med = medicamentos.find(m => m.id === evento.medicamentoId);
         if (!med) return;
-        if (!med.detalhesIA) {
-            callGemini(med.nome, "detalhesOrganizado").then(det => {
-                med.detalhesIA = det;
-                salvarDados();
-            });
-        }
         const modal = document.createElement("div");
         modal.className = "alarm-modal";
         modal.innerHTML = `
@@ -294,15 +268,7 @@ Use apenas informações factuais e seguras. Responda em português.`;
         document.getElementById("tomarAgoraBtn").onclick = async () => {
             marcarTomado(evento.id);
             if (med.comandoArduino) await enviarComandoBluetooth(med.comandoArduino);
-            if (confirm("Notificar responsável?")) {
-                try {
-                    await fetch("/api/notificar", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ codigo: pairCode, mensagem: `${med.nome} tomado às ${evento.horario}`, timestamp: Date.now() })
-                    });
-                } catch(e) {}
-            }
+            if (confirm("Notificar responsável?")) notificarResponsavel(med.nome, evento.horario);
             fechar();
         };
         document.getElementById("naoTomarBtn").onclick = () => {
@@ -310,14 +276,14 @@ Use apenas informações factuais e seguras. Responda em português.`;
             fechar();
         };
         document.getElementById("lerMaisBtn").onclick = async () => {
-            let detalhes = med.detalhesIA;
-            if (!detalhes) {
-                detalhes = await callGemini(med.nome, "detalhesOrganizado");
-                med.detalhesIA = detalhes;
-                salvarDados();
-            }
+            let detalhes = med.detalhesIA || "Detalhes do medicamento: Siga orientação médica. Consulte a bula para mais informações.";
             mostrarModalLerMais(med.resumoObrigatorio || "Resumo indisponível", detalhes);
         };
+    }
+
+    function notificarResponsavel(medNome, horario) {
+        if (!pairCode) return;
+        alert(`[SIMULAÇÃO] Notificando responsável: ${medNome} tomado às ${horario}`);
     }
 
     function reagendarAlarmes() {
@@ -474,10 +440,10 @@ Use apenas informações factuais e seguras. Responda em português.`;
         const analysisScreen = document.getElementById("analysisScreen");
         const analysisContent = document.getElementById("analysisContent");
         analysisScreen.classList.add("active");
-        analysisContent.innerHTML = "<div style='text-align:center'>⏳ IA analisando medicamentos...</div>";
+        analysisContent.innerHTML = "<div style='text-align:center'>⏳ Analisando medicamentos...</div>";
 
         const nomes = medicamentosTemp.map(m => m.nome).join(", ");
-        const interacaoResposta = await callGemini(nomes, "interacoes");
+        const interacaoResposta = await simularGemini(nomes, "interacoes");
         let temInteracao = interacaoResposta.toLowerCase().includes("sim") || interacaoResposta.toLowerCase().includes("perigosa");
         let explicacao = interacaoResposta.substring(0, 200);
         let solucao = interacaoResposta.includes("Solução") ? interacaoResposta.split("Solução")[1] : "";
@@ -488,13 +454,13 @@ Use apenas informações factuais e seguras. Responda em português.`;
                         ${temInteracao && solucao ? `<p><strong>Solução:</strong> ${solucao}</p>` : ""}
                     </div>`;
         for (let med of medicamentosTemp) {
-            const resumoObrigatorio = await callGemini(med.nome, "resumoObrigatorio");
+            const resumoObrigatorio = await simularGemini(med.nome, "resumoObrigatorio");
             const faltando = [];
             if (!med.dosagem) faltando.push("dose");
             if (!med.horarios || med.horarios.length === 0) faltando.push("horários");
             let sugestaoHtml = "";
             if (faltando.length) {
-                const sugestaoIA = await callGemini({ nome: med.nome, faltando: faltando.join(", ") }, "sugestao");
+                const sugestaoIA = await simularGemini({ nome: med.nome, faltando: faltando.join(", ") }, "sugestao");
                 sugestaoHtml = `<div class="suggested-badge">🔵 O sistema sugere: ${sugestaoIA}</div>`;
             }
             html += `<div class="med-analysis-card">
@@ -515,12 +481,13 @@ Use apenas informações factuais e seguras. Responda em português.`;
                     return;
                 }
                 detalhesDiv.innerHTML = "⏳ Carregando detalhes...";
-                const detalhes = await callGemini(nome, "detalhesOrganizado");
+                const detalhes = await simularGemini(nome, "detalhesOrganizado");
                 detalhesDiv.innerHTML = formatarTextoIA(detalhes);
                 detalhesDiv.style.display = 'block';
             };
         });
     };
+
     document.getElementById("closeAnalysisBtn").onclick = () => document.getElementById("analysisScreen").classList.remove("active");
     document.getElementById("reviseCadastroBtn").onclick = () => document.getElementById("analysisScreen").classList.remove("active");
     document.getElementById("confirmTreatmentBtn").onclick = async () => {
@@ -534,10 +501,10 @@ Use apenas informações factuais e seguras. Responda em português.`;
             if (!horarios.length && intervalo) horarios = gerarHorariosPorIntervalo(intervalo);
             const dias = Array.from(form.querySelectorAll(".weekday-btn.active")).map(btn => parseInt(btn.dataset.day));
             const comandoArduino = form.querySelector(".medComando").value.trim();
-            const resumoObrigatorio = await callGemini(nome, "resumoObrigatorio");
+            const resumoObrigatorio = await simularGemini(nome, "resumoObrigatorio");
             const novoMed = {
                 id: nextId++, nome, dosagem, horarios: horarios.length ? horarios : ["08:00"], diasAtivos: dias.length ? dias : [0,1,2,3,4,5,6],
-                comandoArduino, resumoObrigatorio, detalhesIA: ""
+                comandoArduino, resumoObrigatorio, detalhesIA: "Informações detalhadas do medicamento. Consulte a bula oficial."
             };
             medicamentos.push(novoMed);
             gerarEventos(novoMed);
@@ -553,8 +520,8 @@ Use apenas informações factuais e seguras. Responda em português.`;
         const pergunta = document.getElementById("iaPergunta").value.trim();
         if (!pergunta) return;
         const div = document.getElementById("iaResposta");
-        div.innerHTML = "⏳ Consultando IA...";
-        const resposta = await callGemini(pergunta, "geral");
+        div.innerHTML = "⏳ Consultando base de dados...";
+        const resposta = await simularGemini(pergunta, "geral");
         div.innerHTML = formatarTextoIA(resposta);
     };
 
@@ -566,7 +533,7 @@ Use apenas informações factuais e seguras. Responda em português.`;
     };
     document.getElementById("gerarCodigoBtn").onclick = () => {
         pairCode = Math.random().toString(36).substring(2, 10).toUpperCase();
-        localStorage.setItem("pairing_code", pairCode);
+        localStorage.setItem("pairing_code_test", pairCode);
         document.getElementById("pairingCode").innerText = pairCode;
     };
     document.getElementById("copiarCodigoBtn").onclick = () => {
@@ -577,26 +544,14 @@ Use apenas informações factuais e seguras. Responda em português.`;
     document.getElementById("toggleModoBtn").onclick = () => {
         modoResponsavel = !modoResponsavel;
         document.getElementById("modoResponsavelBox").style.display = modoResponsavel ? "block" : "none";
-        if (modoResponsavel) carregarNotificacoes();
     };
-    async function carregarNotificacoes() {
-        if (!pairCode) return;
-        try {
-            const resp = await fetch(`/api/notificar?codigo=${pairCode}`);
-            const notificacoes = await resp.json();
-            const div = document.getElementById("notificacoesResponsavel");
-            div.innerHTML = notificacoes.map(n => `<div class="schedule-item">${n.mensagem}</div>`).join('') || "<div>Sem notificações</div>";
-            setTimeout(carregarNotificacoes, 10000);
-        } catch(e) {}
-    }
     document.getElementById("parearBtn").onclick = async () => {
         const codigo = document.getElementById("codigoResponsavel").value.trim();
         if (!codigo) return;
         pairCode = codigo;
-        localStorage.setItem("pairing_code", pairCode);
+        localStorage.setItem("pairing_code_test", pairCode);
         document.getElementById("pairingCode").innerText = pairCode;
         alert("Pareado! Agora você receberá notificações.");
-        if (modoResponsavel) carregarNotificacoes();
     };
 
     document.querySelectorAll(".tab").forEach(tab => {
